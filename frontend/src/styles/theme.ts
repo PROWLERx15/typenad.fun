@@ -1,7 +1,7 @@
 import { CSSProperties } from 'react';
 
 /**
- * TypeMonad - Cosmic Arcade Theme
+ * typenad - Cosmic Arcade Theme
  * Deep Space + Monad Purple
  * Consolidated colors, fonts, effects, and component styles
  */

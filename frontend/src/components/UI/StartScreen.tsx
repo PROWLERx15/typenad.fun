@@ -94,7 +94,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart, onTimeAttack, onStor
                 </button>
 
                 <div className={styles.mainContent}>
-                    <h1 className={styles.title}>TypeMonad</h1>
+                    <h1 className={styles.title}>typenad</h1>
                     {!isWalletReady ? (
                         <>
                             <p className={styles.welcomeText}>

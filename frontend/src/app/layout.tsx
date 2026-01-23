@@ -8,10 +8,10 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-    title: 'TypeMonad - Cosmic Typing Arena',
+    title: 'typenad - Cosmic Typing Arena',
     description: 'A high-stakes cosmic typing game powered by Monad blockchain',
     icons: {
-        icon: '/images/typemonad.png',
+        icon: '/images/typenad.png',
     },
 };
 

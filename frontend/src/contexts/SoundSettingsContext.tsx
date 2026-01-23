@@ -25,10 +25,10 @@ export const SoundSettingsProvider: React.FC<{ children: ReactNode }> = ({ child
   // Load from localStorage after mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedSfxMuted = localStorage.getItem('typemonad_sfx_muted');
-      const savedMusicMuted = localStorage.getItem('typemonad_music_muted');
-      const savedSfxVolume = localStorage.getItem('typemonad_sfx_volume');
-      const savedMusicVolume = localStorage.getItem('typemonad_music_volume');
+      const savedSfxMuted = localStorage.getItem('typenad_sfx_muted');
+      const savedMusicMuted = localStorage.getItem('typenad_music_muted');
+      const savedSfxVolume = localStorage.getItem('typenad_sfx_volume');
+      const savedMusicVolume = localStorage.getItem('typenad_music_volume');
 
       if (savedSfxMuted) setSfxMuted(savedSfxMuted === 'true');
       if (savedMusicMuted) setMusicMuted(savedMusicMuted === 'true');
@@ -42,25 +42,25 @@ export const SoundSettingsProvider: React.FC<{ children: ReactNode }> = ({ child
   // Save to localStorage when values change
   useEffect(() => {
     if (isLoaded && typeof window !== 'undefined') {
-      localStorage.setItem('typemonad_sfx_muted', sfxMuted.toString());
+      localStorage.setItem('typenad_sfx_muted', sfxMuted.toString());
     }
   }, [sfxMuted, isLoaded]);
 
   useEffect(() => {
     if (isLoaded && typeof window !== 'undefined') {
-      localStorage.setItem('typemonad_music_muted', musicMuted.toString());
+      localStorage.setItem('typenad_music_muted', musicMuted.toString());
     }
   }, [musicMuted, isLoaded]);
 
   useEffect(() => {
     if (isLoaded && typeof window !== 'undefined') {
-      localStorage.setItem('typemonad_sfx_volume', sfxVolume.toString());
+      localStorage.setItem('typenad_sfx_volume', sfxVolume.toString());
     }
   }, [sfxVolume, isLoaded]);
 
   useEffect(() => {
     if (isLoaded && typeof window !== 'undefined') {
-      localStorage.setItem('typemonad_music_volume', musicVolume.toString());
+      localStorage.setItem('typenad_music_volume', musicVolume.toString());
     }
   }, [musicVolume, isLoaded]);
 

@@ -190,7 +190,7 @@ const ShareableRankCard: React.FC<ShareableRankCardProps> = ({
       const trimmedCanvas = trimCanvas(canvas);
 
       const link = document.createElement('a');
-      link.download = `typemonad-rank-${score}.png`;
+      link.download = `typenad-rank-${score}.png`;
       link.href = trimmedCanvas.toDataURL('image/png');
       link.click();
 
@@ -231,7 +231,7 @@ const ShareableRankCard: React.FC<ShareableRankCardProps> = ({
         }
       });
 
-      const tweetText = `I'm a ${rankTitle} on TypeMonad!\n\nScore: ${score.toLocaleString()}\nWPM: ${wpm || '-'}\n\nPlay now: https://typemonad.xyz\n\n#TypeMonad #TypingGame #Web3Gaming`;
+      const tweetText = `I'm a ${rankTitle} on typenad!\n\nScore: ${score.toLocaleString()}\nWPM: ${wpm || '-'}\n\nPlay now: https://typenad.xyz\n\n#typenad #TypingGame #Web3Gaming`;
       const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
 
       window.open(tweetUrl, '_blank', 'width=550,height=420');
@@ -271,8 +271,8 @@ const ShareableRankCard: React.FC<ShareableRankCardProps> = ({
 
         {/* Header */}
         <div style={rankCardStyles.header}>
-          <img src="/images/typemonad.png" alt="TypeMonad" style={rankCardStyles.logo} />
-          <span style={rankCardStyles.gameTitle}>TYPEMONAD</span>
+          <img src="/images/typenad.png" alt="typenad" style={rankCardStyles.logo} />
+          <span style={rankCardStyles.gameTitle}>typenad</span>
         </div>
 
         {/* Rank Badge */}
@@ -299,7 +299,7 @@ const ShareableRankCard: React.FC<ShareableRankCardProps> = ({
 
         {/* Footer */}
         <div style={rankCardStyles.footer}>
-          <span style={rankCardStyles.footerText}>TypeMonad</span>
+          <span style={rankCardStyles.footerText}>typenad</span>
         </div>
       </div>
 

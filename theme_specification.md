@@ -20,7 +20,7 @@
 ### Game Name
 | Current | New |
 |---------|-----|
-| **TypeMonad** | **TypeDuel Pro** |
+| **typenad** | **TypeDuel Pro** |
 
 ### Tagline
 | Current | New |

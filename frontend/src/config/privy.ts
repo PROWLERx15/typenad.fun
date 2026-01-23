@@ -24,7 +24,7 @@ export const privyConfig: PrivyClientConfig = {
     appearance: {
         theme: 'dark',
         accentColor: '#8B5CF6', // Monad purple
-        logo: '/images/typemonad.png',
+        logo: '/images/typenad.png',
         showWalletLoginFirst: false,
     },
 

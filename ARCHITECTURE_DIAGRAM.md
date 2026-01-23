@@ -1,4 +1,4 @@
-# TypeMonad - Complete Architecture Diagram
+# typenad - Complete Architecture Diagram
 
 ## 🏗️ System Architecture
 
@@ -537,7 +537,7 @@ App (page.tsx)
 
 ---
 
-This architecture provides a solid foundation for your TypeMonad game with:
+This architecture provides a solid foundation for your typenad game with:
 - ✅ Scalable database design
 - ✅ Secure data handling
 - ✅ Seamless migration
