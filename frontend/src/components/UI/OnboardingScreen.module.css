@@ -1,0 +1,108 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+.onboardingScreen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    font-family: "Press Start 2P", monospace;
+    text-align: center;
+}
+
+.onboardingScreen input::placeholder {
+    color: rgba(0,0,0,0.3);
+}
+
+.title {
+    font-family: "Press Start 2P", monospace;
+    font-size: 36px;
+    margin: 20px 0;
+    text-shadow: 2px 4px 8px #000;
+}
+
+.instructions {
+    text-align: left;
+    max-width: 600px;
+    font-weight: normal;
+    line-height: 2;
+    font-size: 14px;
+}
+
+.tryTyping {
+    width: 100%;
+    text-align: center;
+    color: yellow;
+    font-family: "Press Start 2P", monospace;
+    font-size: 20px;
+    text-shadow: 2px 2px 4px #000;
+    margin: 20px 0;
+}
+
+.demoZombie {
+    margin: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.healthBar {
+    width: 100px;
+    height: 12px;
+    background-color: red;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.healthBarFill {
+    height: 100%;
+    background-color: green;
+    transition: width 0.2s;
+}
+
+.zombieEmoji {
+    font-size: 48px;
+}
+
+.wordLabel {
+    font-family: monospace;
+    font-size: 16px;
+    background-color: #000;
+    color: #0f0;
+    border: 2px solid #0f0;
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.input {
+    font-family: "Press Start 2P", monospace;
+    font-size: 24px;
+    padding: 12px;
+    background: rgba(0,0,0,0.6);
+    border-width: 3px;
+    border-style: solid;
+    border-color: yellow #FFD600 #FFEA00 #FFFF00;
+    color: yellow;
+    text-align: center;
+    image-rendering: pixelated;
+    outline: none;
+    width: 40vw;
+    max-width: 350px;
+}
+
+.button {
+    font-family: "Press Start 2P", monospace;
+    font-size: 20px;
+    padding: 10px 20px;
+    color: yellow;
+    background: transparent;
+    border: 2px solid yellow;
+    cursor: pointer;
+    opacity: 1;
+    margin-top: 10px;
+    image-rendering: pixelated;
+    outline: none;
+}

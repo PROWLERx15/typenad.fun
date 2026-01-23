@@ -1,0 +1,556 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   START SCREEN - COSMIC ARCADE LANDING
+   Deep Space + Monad Purple Theme
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CONTAINER
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.container {
+  position: relative;
+  font-family: 'Press Start 2P', monospace;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TOP BAR BUTTONS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.topRightButtons {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  display: flex;
+  gap: 12px;
+  z-index: 100;
+}
+
+.topButton {
+  background: rgba(10, 10, 26, 0.9);
+  border: 2px solid rgba(139, 92, 246, 0.5);
+  color: #8B5CF6;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  line-height: 12px;
+  padding: 10px 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow:
+    0 0 10px rgba(139, 92, 246, 0.2),
+    inset 0 0 20px rgba(139, 92, 246, 0.05);
+}
+
+.topButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.topButton:not(:disabled):hover {
+  background: rgba(10, 10, 26, 0.95);
+  border-color: #A78BFA;
+  color: #A78BFA;
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 25px rgba(139, 92, 246, 0.5),
+    0 0 50px rgba(139, 92, 246, 0.2),
+    inset 0 0 30px rgba(139, 92, 246, 0.1);
+}
+
+.topButton:not(:disabled):active {
+  transform: translateY(0);
+  box-shadow:
+    0 0 10px rgba(139, 92, 246, 0.3),
+    inset 0 0 40px rgba(139, 92, 246, 0.2);
+}
+
+.buttonIcon {
+  width: 28px;
+  height: 28px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 5px rgba(139, 92, 246, 0.5));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   BOTTOM RIGHT BUTTON
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.bottomRightButton {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  background: rgba(10, 10, 26, 0.9);
+  border: 2px solid rgba(139, 92, 246, 0.5);
+  color: #8B5CF6;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  line-height: 12px;
+  padding: 10px 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow:
+    0 0 10px rgba(139, 92, 246, 0.2),
+    inset 0 0 20px rgba(139, 92, 246, 0.05);
+}
+
+.bottomRightButton:hover {
+  background: rgba(10, 10, 26, 0.95);
+  border-color: #A78BFA;
+  color: #A78BFA;
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 25px rgba(139, 92, 246, 0.5),
+    0 0 50px rgba(139, 92, 246, 0.2),
+    inset 0 0 30px rgba(139, 92, 246, 0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MAIN CONTENT
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.mainContent {
+  text-align: center;
+  z-index: 10;
+  animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TITLE - MASSIVE GLOWING NEON
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(48px, 8vw, 80px);
+  color: #8B5CF6;
+  margin: 0 0 40px 0;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  animation: neonPulse 2s ease-in-out infinite alternate;
+  text-shadow:
+    0 0 10px rgba(139, 92, 246, 0.8),
+    0 0 30px rgba(139, 92, 246, 0.6),
+    0 0 60px rgba(139, 92, 246, 0.4),
+    0 0 100px rgba(192, 132, 252, 0.3),
+    0 0 150px rgba(192, 132, 252, 0.2);
+}
+
+@keyframes neonPulse {
+  0% {
+    text-shadow:
+      0 0 5px rgba(139, 92, 246, 0.6),
+      0 0 15px rgba(139, 92, 246, 0.4),
+      0 0 30px rgba(139, 92, 246, 0.3);
+  }
+
+  100% {
+    text-shadow:
+      0 0 10px rgba(139, 92, 246, 0.9),
+      0 0 40px rgba(139, 92, 246, 0.7),
+      0 0 80px rgba(139, 92, 246, 0.5),
+      0 0 120px rgba(192, 132, 252, 0.4),
+      0 0 180px rgba(192, 132, 252, 0.2);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   GAME MODE SECTION
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.gameModeLabel {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: #A78BFA;
+  margin-bottom: 16px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+.modeButtonsContainer {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MODE BUTTONS - NEON CTA
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.modeButton {
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.2) 0%, rgba(109, 40, 217, 0.2) 100%);
+  border: 2px solid #8B5CF6;
+  color: #8B5CF6;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 16px;
+  line-height: 16px;
+  padding: 16px 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 15px rgba(139, 92, 246, 0.4),
+    inset 0 0 20px rgba(139, 92, 246, 0.1);
+  animation: buttonGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes buttonGlow {
+  0% {
+    box-shadow:
+      0 0 10px rgba(139, 92, 246, 0.3),
+      inset 0 0 15px rgba(139, 92, 246, 0.1);
+  }
+
+  100% {
+    box-shadow:
+      0 0 20px rgba(139, 92, 246, 0.5),
+      inset 0 0 25px rgba(139, 92, 246, 0.15);
+  }
+}
+
+.modeButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  animation: none;
+}
+
+.modeButton:not(:disabled):hover {
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.4) 0%, rgba(109, 40, 217, 0.4) 100%);
+  border-color: #A78BFA;
+  color: #A78BFA;
+  transform: translateY(-3px);
+  box-shadow:
+    0 0 30px rgba(139, 92, 246, 0.7),
+    0 0 60px rgba(139, 92, 246, 0.4),
+    inset 0 0 30px rgba(139, 92, 246, 0.2);
+}
+
+.modeButton:not(:disabled):active {
+  transform: translateY(0);
+  box-shadow:
+    0 0 15px rgba(139, 92, 246, 0.5),
+    inset 0 0 40px rgba(139, 92, 246, 0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   HOW TO CONTAINER
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.howToContainer {
+  margin-top: 40px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CHAIN ID / WALLET INFO
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.chainIdContainer {
+  margin: 40px auto 0 auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: rgba(139, 92, 246, 0.6);
+  letter-spacing: 1px;
+  text-align: center;
+  line-height: 1.8;
+  word-break: break-all;
+  max-width: 500px;
+  background: rgba(10, 10, 26, 0.7);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 8px;
+  padding: 16px 24px;
+  box-sizing: border-box;
+  box-shadow: inset 0 0 20px rgba(139, 92, 246, 0.05);
+}
+
+.loadingContainer {
+  margin: 40px auto 0 auto;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: #8B5CF6;
+  letter-spacing: 2px;
+  text-align: center;
+  line-height: 1.8;
+  max-width: 500px;
+  padding: 16px 24px;
+  animation: loadingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes loadingPulse {
+
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(139, 92, 246, 0.3);
+  border-left-color: #8B5CF6;
+  border-radius: 50%;
+  margin: 20px auto;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   WELCOME OVERLAY / MODAL
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.welcomeContainer {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 10vh;
+}
+
+.welcomeOverlay {
+  width: 750px;
+  max-width: 90vw;
+  background: rgba(10, 10, 26, 0.95);
+  border: 2px solid rgba(139, 92, 246, 0.5);
+  padding: 40px;
+  border-radius: 12px;
+  color: white;
+  text-align: center;
+  font-family: 'Press Start 2P', monospace;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  line-height: 1.5;
+  box-shadow:
+    0 0 40px rgba(139, 92, 246, 0.3),
+    inset 0 0 60px rgba(139, 92, 246, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.welcomeTitle {
+  margin: 0 0 20px;
+  font-size: 28px;
+  color: #8B5CF6;
+  text-shadow:
+    0 0 10px rgba(139, 92, 246, 0.6),
+    0 0 30px rgba(139, 92, 246, 0.3);
+}
+
+.welcomeText {
+  margin: 0 0 16px;
+  font-size: 12px;
+  line-height: 2;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.welcomeTextSecondary {
+  margin: 0 0 30px;
+  font-size: 11px;
+  line-height: 2;
+  color: rgba(180, 180, 180, 0.8);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   WALLET ACTION BUTTONS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.walletActionButton {
+  background: transparent;
+  border: none;
+  color: #A78BFA;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  margin-top: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: all 0.3s ease;
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+.walletActionButton:hover {
+  color: #C084FC;
+  text-shadow: 0 0 15px rgba(192, 132, 252, 0.5);
+}
+
+.chainIdText {
+  font-size: 10px;
+  margin-top: 12px;
+  display: block;
+  color: rgba(139, 92, 246, 0.5);
+}
+
+.demoWarningText {
+  font-size: 10px;
+  color: #C084FC;
+  margin-bottom: 16px;
+  display: block;
+  line-height: 2;
+  opacity: 0.9;
+  max-width: 450px;
+  text-shadow: 0 0 10px rgba(192, 132, 252, 0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   LINK BUTTON
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.linkButton {
+  background: transparent;
+  border: none;
+  color: #8B5CF6;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: all 0.3s ease;
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+.linkButton:hover {
+  color: #A78BFA;
+  text-shadow: 0 0 15px rgba(167, 139, 250, 0.5);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   WAVE DEBUG
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.waveDebugContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.waveSelectorContainer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.waveSelectorLabel {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: rgba(139, 92, 246, 0.6);
+}
+
+.waveSelectorDropdown {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  padding: 6px 12px;
+  background: rgba(10, 10, 26, 0.95);
+  color: #8B5CF6;
+  border: 2px solid #8B5CF6;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+}
+
+.waveSelectorDropdown:focus {
+  outline: none;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   POWERUPS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.powerupsContainer {
+  margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.powerupsLabel {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: #A78BFA;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.powerupsGrid {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.powerupCard {
+  background: rgba(10, 10, 26, 0.8);
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 120px;
+  box-shadow:
+    0 0 10px rgba(139, 92, 246, 0.1),
+    inset 0 0 20px rgba(139, 92, 246, 0.05);
+}
+
+.powerupCard:hover {
+  border-color: rgba(139, 92, 246, 0.6);
+  transform: translateY(-3px);
+  box-shadow:
+    0 0 25px rgba(139, 92, 246, 0.3),
+    inset 0 0 30px rgba(139, 92, 246, 0.1);
+}
+
+.powerupCardActive {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: #8B5CF6;
+  box-shadow:
+    0 0 20px rgba(139, 92, 246, 0.5),
+    inset 0 0 30px rgba(139, 92, 246, 0.15);
+}
+
+.powerupCardInactive {
+  opacity: 0.35;
+}
+
+.powerupIcon {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.5));
+}
+
+.powerupName {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: #8B5CF6;
+  text-align: center;
+  line-height: 1.5;
+  text-shadow: 0 0 5px rgba(139, 92, 246, 0.3);
+}

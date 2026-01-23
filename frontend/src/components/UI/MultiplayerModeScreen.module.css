@@ -1,0 +1,128 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/images/background-8.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.container {
+  background: rgba(20, 20, 20, 0.75);
+  border: 4px solid #8B5CF6;
+  border-radius: 8px;
+  padding: 40px;
+  max-width: 800px;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.5);
+}
+
+.title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 32px;
+  color: #8B5CF6;
+  margin: 0 0 20px 0;
+  text-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+}
+
+.description {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+  color: #fff;
+  margin: 0 0 40px 0;
+  line-height: 1.8;
+}
+
+.modesContainer {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.modeCard {
+  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(139, 92, 246, 0.5);
+  border-radius: 8px;
+  padding: 30px;
+  width: 300px;
+  transition: all 0.3s ease;
+}
+
+.modeCard:hover {
+  border-color: #8B5CF6;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+}
+
+.modeTitle {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 20px;
+  color: #8B5CF6;
+  margin: 0 0 20px 0;
+}
+
+.modeDescription {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: #ccc;
+  margin: 0 0 30px 0;
+  line-height: 1.8;
+}
+
+.modeButton {
+  background: rgba(139, 92, 246, 0.2);
+  border: 2px solid rgba(139, 92, 246, 0.5);
+  color: #8B5CF6;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+  line-height: 14px;
+  padding: 12px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.modeButton:hover {
+  background: rgba(139, 92, 246, 0.3);
+  border-color: #8B5CF6;
+}
+
+.modeButtonDisabled {
+  background: rgba(139, 92, 246, 0.1);
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  color: rgba(139, 92, 246, 0.5);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+  line-height: 14px;
+  padding: 12px 24px;
+  border-radius: 4px;
+  cursor: not-allowed;
+  width: 100%;
+  opacity: 0.5;
+}
+
+.backButton {
+  background: transparent;
+  border: 2px solid rgba(139, 92, 246, 0.5);
+  color: #8B5CF6;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+  line-height: 14px;
+  padding: 10px 30px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.backButton:hover {
+  border-color: #8B5CF6;
+  background: rgba(139, 92, 246, 0.1);
+}

@@ -1,0 +1,209 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/images/background-8.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.container {
+    background: rgba(20, 20, 20, 0.75);
+    border: 4px solid #8B5CF6;
+    border-radius: 8px;
+    padding: 40px;
+    max-width: 700px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.5);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: "Press Start 2P", monospace;
+}
+
+.closeButton {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 8px 10px;
+    font-size: 10px;
+    font-family: "Press Start 2P", monospace;
+    color: #8B5CF6;
+    background: transparent;
+    border: 2px solid rgba(139, 92, 246, 0.5);
+    border-radius: 4px;
+    outline: none;
+    image-rendering: pixelated;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+    border-color: #8B5CF6;
+    background: rgba(139, 92, 246, 0.1);
+}
+
+.title {
+    font-family: "Press Start 2P", monospace;
+    font-size: 28px;
+    margin: 0 0 20px 0;
+    text-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+    color: #C084FC;
+}
+
+.description {
+    width: 100%;
+    text-align: center;
+    color: #fff;
+    font-family: "Press Start 2P", monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    margin: 0 0 10px 0;
+}
+
+.opponentNote {
+    width: 100%;
+    text-align: center;
+    color: #C084FC;
+    font-family: "Press Start 2P", monospace;
+    font-size: 11px;
+    margin: 0 0 40px;
+}
+
+.buttonGroup {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    width: 100%;
+    justify-content: center;
+}
+
+.button {
+    font-family: "Press Start 2P", monospace;
+    font-size: 14px;
+    line-height: 14px;
+    color: #8B5CF6;
+    background: rgba(139, 92, 246, 0.2);
+    border: 2px solid rgba(139, 92, 246, 0.5);
+    border-radius: 4px;
+    padding: 12px 24px;
+    cursor: pointer;
+    image-rendering: pixelated;
+    outline: none;
+    transition: all 0.2s ease;
+    min-width: 150px;
+}
+
+.button:hover:not(:disabled) {
+    background: rgba(139, 92, 246, 0.3);
+    border-color: #8B5CF6;
+}
+
+.button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.hostingLabel {
+    font-family: "Press Start 2P", monospace;
+    color: #8B5CF6;
+    margin-bottom: 16px;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.chainDisplay {
+    margin: 0 auto 20px;
+    font-size: 11px;
+    color: #ccc;
+    letter-spacing: 0.5px;
+    text-align: center;
+    line-height: 1.8;
+    word-break: break-all;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(139, 92, 246, 0.3);
+    border-radius: 8px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.vsText {
+    margin: 10px auto;
+    font-size: 16px;
+    color: #C084FC;
+}
+
+.input {
+    font-family: "Press Start 2P", monospace;
+    font-size: 12px;
+    padding: 12px 16px;
+    background: rgba(0,0,0,0.5);
+    border: 2px solid rgba(139, 92, 246, 0.5);
+    border-radius: 4px;
+    color: #8B5CF6;
+    text-align: center;
+    image-rendering: pixelated;
+    outline: none;
+    width: 100%;
+    margin-bottom: 16px;
+    transition: all 0.2s ease;
+}
+
+.input:focus {
+    border-color: #8B5CF6;
+    background: rgba(0,0,0,0.7);
+}
+
+.input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.waitingGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 20px;
+    align-items: center;
+    width: 100%;
+}
+
+.waitingText {
+    font-family: "Press Start 2P", monospace;
+    color: #ccc;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.actionButtons {
+    display: flex;
+    gap: 16px;
+    margin-top: 20px;
+    width: 100%;
+    justify-content: center;
+}
+
+.errorMessage {
+    font-family: "Press Start 2P", monospace;
+    color: #ff4444;
+    font-size: 10px;
+    line-height: 1.6;
+    margin: 10px 0;
+    text-align: center;
+    background: rgba(255, 68, 68, 0.1);
+    border: 1px solid rgba(255, 68, 68, 0.3);
+    border-radius: 4px;
+    padding: 12px;
+}
