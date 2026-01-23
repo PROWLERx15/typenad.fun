@@ -251,7 +251,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
     useEffect(() => {
         if (screenEffect && impactRef.current && !sfxMuted) {
             impactRef.current.currentTime = 0;
-            impactRef.current.play();
+            impactRef.current.currentTime = 0;
+            impactRef.current.play().catch(e => console.log('Audio autoplay prevented:', e));
         }
     }, [screenEffect, sfxMuted]);
 
@@ -351,12 +352,12 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
 
         // Play death sounds based on enemy type
         if (!sfxMuted && killed) {
-            if (killed.type === 'drone') droneDieRef.current?.play();
-            else if (killed.type === 'cruiser') cruiserDieRef.current?.play();
-            else if (killed.type === 'scout') scoutDieRef.current?.play();
-            else if (killed.type === 'asteroid') explodeRef.current?.play();
-            else if (killed.type === 'mothership') mothershipDieRef.current?.play();
-            else if (killed.type === 'mech') mechDieRef.current?.play();
+            if (killed.type === 'drone') droneDieRef.current?.play().catch(() => { });
+            else if (killed.type === 'cruiser') cruiserDieRef.current?.play().catch(() => { });
+            else if (killed.type === 'scout') scoutDieRef.current?.play().catch(() => { });
+            else if (killed.type === 'asteroid') explodeRef.current?.play().catch(() => { });
+            else if (killed.type === 'mothership') mothershipDieRef.current?.play().catch(() => { });
+            else if (killed.type === 'mech') mechDieRef.current?.play().catch(() => { });
         }
     };
 

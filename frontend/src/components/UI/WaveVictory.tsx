@@ -13,7 +13,7 @@ const WaveVictory: React.FC<WaveVictoryProps> = ({ onReturnHome }) => {
         const audio = mouseOverRef.current;
         if (audio) {
             audio.currentTime = 0;
-            audio.play();
+            audio.play().catch(() => { });
         }
     };
 

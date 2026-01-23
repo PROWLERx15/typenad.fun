@@ -31,23 +31,39 @@ export function useGoldBalance() {
                     .eq('wallet_address', address)
                     .single();
 
-                if (fetchError) throw fetchError;
+                if (fetchError) {
+                    // Check for "row not found" error (PGRST116)
+                    if (fetchError.code === 'PGRST116') {
+                        console.log('✨ New user detected (no gold record), initializing with 0 gold');
+                        setGold(0);
+                        localStorage.setItem('playerGold', '0');
+                        // Optional: Create the user record here if desired, 
+                        // but for now we just treat it as 0 gold without error.
+                        return;
+                    }
+                    throw fetchError;
+                }
 
                 if (data) {
                     console.log('✅ Gold loaded from database:', data.gold);
                     setGold(data.gold);
                     localStorage.setItem('playerGold', data.gold.toString());
-                } else {
-                    // Fallback to localStorage
-                    const localGold = localStorage.getItem('playerGold');
-                    const goldValue = localGold ? parseInt(localGold, 10) : 0;
-                    setGold(goldValue);
-                    console.log('⚠️ No database record, using localStorage:', goldValue);
                 }
-            } catch (err) {
-                console.error('❌ Failed to load gold:', err);
+            } catch (err: any) {
+                console.error('❌ Failed to load gold:', err.message || err);
+
+                // Detailed Supabase error logging
+                if (err.details || err.hint) {
+                    console.error('Supabase Error Details:', {
+                        code: err.code,
+                        message: err.message,
+                        details: err.details,
+                        hint: err.hint
+                    });
+                }
+
                 setError(err instanceof Error ? err.message : 'Failed to load gold');
-                
+
                 // Fallback to localStorage
                 const localGold = localStorage.getItem('playerGold');
                 setGold(localGold ? parseInt(localGold, 10) : 0);
@@ -62,7 +78,7 @@ export function useGoldBalance() {
     // Update gold both locally and in database
     const updateGold = useCallback(async (newGold: number) => {
         console.log('💰 Updating gold to:', newGold);
-        
+
         // Immediate local update
         setGold(newGold);
         localStorage.setItem('playerGold', newGold.toString());
@@ -76,7 +92,7 @@ export function useGoldBalance() {
                     .eq('wallet_address', address);
 
                 if (updateError) throw updateError;
-                
+
                 console.log('✅ Gold synced to database');
             } catch (err) {
                 console.error('❌ Failed to sync gold to database:', err);

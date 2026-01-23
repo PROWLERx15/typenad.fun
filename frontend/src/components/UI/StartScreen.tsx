@@ -43,7 +43,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart, onTimeAttack, onStor
         const audio = mouseOverRef.current;
         if (audio && !sfxMuted) {
             audio.currentTime = 0;
-            audio.play();
+            audio.play().catch(() => { });
         }
     };
     const handleMouseLeave = () => {
