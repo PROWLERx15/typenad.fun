@@ -5,18 +5,18 @@ const SPRITE_WIDTH = 1024;
 const SPRITE_HEIGHT = 1024;
 const SPRITE_COLS = 3;
 const SPRITE_ROWS = 2;
-const ZOMBIE_WIDTH = SPRITE_WIDTH / SPRITE_COLS;
-const ZOMBIE_HEIGHT = SPRITE_HEIGHT / SPRITE_ROWS;
-const DISPLAY_WIDTH = Math.round(128/3);
-const DISPLAY_HEIGHT = Math.round(192/3);
+const ENEMY_WIDTH = SPRITE_WIDTH / SPRITE_COLS;
+const ENEMY_HEIGHT = SPRITE_HEIGHT / SPRITE_ROWS;
+const DISPLAY_WIDTH = Math.round(128 / 3);
+const DISPLAY_HEIGHT = Math.round(192 / 3);
 
 export const styles = {
-  container: (zombie: Enemy): CSSProperties => ({
+  container: (enemy: Enemy): CSSProperties => ({
     userSelect: 'none',
     WebkitUserSelect: 'none',
     position: 'absolute',
-    top: zombie.position,
-    left: `${zombie.left}%`,
+    top: enemy.position,
+    left: `${enemy.left}%`,
     width: DISPLAY_WIDTH,
     height: DISPLAY_HEIGHT + 30,
     display: 'flex',
@@ -27,15 +27,15 @@ export const styles = {
     border: 'none',
     boxSizing: 'border-box',
     overflow: 'visible',
-    opacity: zombie.dying ? 0 : 1,
-    transform: zombie.dying ? 'scale(2)' : 'scale(1)',
-    filter: zombie.dying ? 'blur(5px)' : 'none',
-    transition: zombie.dying ? 'all 0.8s ease-out' : 'none',
+    opacity: enemy.dying ? 0 : 1,
+    transform: enemy.dying ? 'scale(2)' : 'scale(1)',
+    filter: enemy.dying ? 'blur(5px)' : 'none',
+    transition: enemy.dying ? 'all 0.8s ease-out' : 'none',
   }),
 
-  healthBarContainer: (zombieType: string): CSSProperties => ({
+  healthBarContainer: (enemyType: string): CSSProperties => ({
     position: 'absolute',
-    top: zombieType === 'deathrider' ? -75 : -14,
+    top: enemyType === 'deathrider' ? -75 : -14,
     width: DISPLAY_WIDTH,
     height: 8,
     background: '#444',
@@ -61,8 +61,8 @@ export const styles = {
   } as CSSProperties,
 
   sprite: (imagePath: string, bgX: number, bgY: number, scale: number, top: number, dying: boolean | undefined, flash: boolean): CSSProperties => ({
-    width: ZOMBIE_WIDTH,
-    height: ZOMBIE_HEIGHT,
+    width: ENEMY_WIDTH,
+    height: ENEMY_HEIGHT,
     backgroundImage: `url(${imagePath})`,
     backgroundPosition: `${bgX}px ${bgY}px`,
     backgroundSize: `${SPRITE_WIDTH}px ${SPRITE_HEIGHT}px`,

@@ -212,11 +212,11 @@ export const recordGameEnd = async (
     if (walletAddress) {
         try {
             const { supabase } = await import('../lib/supabaseClient');
-            
+
             console.log('📊 Syncing game stats to database...');
-            
+
             // Increment user stats atomically
-            const { error } = await supabase.rpc('increment_user_stats', {
+            const { error } = await (supabase as any).rpc('increment_user_stats', {
                 p_wallet_address: walletAddress,
                 p_games: 1,
                 p_kills: kills,

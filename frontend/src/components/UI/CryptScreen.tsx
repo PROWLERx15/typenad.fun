@@ -31,8 +31,8 @@ const SPRITE_COLS = 3;
 // const SPRITE_ROWS = 2; // Unused
 const SPRITE_WIDTH = 1024;
 const SPRITE_HEIGHT = 1024;
-const ZOMBIE_WIDTH = SPRITE_WIDTH / SPRITE_COLS;
-const ZOMBIE_HEIGHT = SPRITE_HEIGHT / 2; // Assuming 2 rows based on previous code
+const ENEMY_WIDTH = SPRITE_WIDTH / SPRITE_COLS;
+const ENEMY_HEIGHT = SPRITE_HEIGHT / 2; // Assuming 2 rows based on previous code
 
 const getRankTitle = (score: number): string => {
     if (score === 0) return 'Cadet';
@@ -112,26 +112,28 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
                     .eq('wallet_address', address)
                     .single();
 
-                if (userData) {
-                    if (userData.username) {
-                        setCurrentDisplayName(userData.username);
-                        setDisplayName(userData.username);
-                        localStorage.setItem('display_name', userData.username);
+                const user = userData as any;
+
+                if (user) {
+                    if (user.username) {
+                        setCurrentDisplayName(user.username);
+                        setDisplayName(user.username);
+                        localStorage.setItem('display_name', user.username);
                     }
 
                     // Update stats from database (source of truth)
-                    if (userData.total_games !== undefined) {
+                    if (user.total_games !== undefined) {
                         const dbStats = {
-                            totalGames: userData.total_games || 0,
-                            totalKills: userData.total_kills || 0,
+                            totalGames: user.total_games || 0,
+                            totalKills: user.total_kills || 0,
                             totalGoldEarned: stats.totalGoldEarned, // Keep local for now
                             bestStreak: stats.bestStreak,
-                            totalWordsTyped: userData.total_words_typed || 0
+                            totalWordsTyped: user.total_words_typed || 0
                         };
                         setOnlineStats({
-                            totalGames: userData.total_games || 0,
-                            totalKills: userData.total_kills || 0,
-                            totalGold: userData.gold || 0
+                            totalGames: user.total_games || 0,
+                            totalKills: user.total_kills || 0,
+                            totalGold: user.gold || 0
                         });
                     }
 
@@ -139,17 +141,19 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
                     const { data: scoresData } = await supabase
                         .from('game_scores')
                         .select('score, wpm, kills, wave_reached, created_at')
-                        .eq('user_id', userData.id);
+                        .eq('user_id', user.id);
 
-                    if (scoresData && scoresData.length > 0) {
-                        const bestScore = Math.max(...scoresData.map(s => s.score));
-                        const bestWpm = Math.max(...scoresData.map(s => s.wpm));
+                    const scores = scoresData as any[];
+
+                    if (scores && scores.length > 0) {
+                        const bestScore = Math.max(...scores.map(s => s.score));
+                        const bestWpm = Math.max(...scores.map(s => s.wpm));
 
                         if (bestScore > myScore) setMyScore(bestScore);
                         if (bestWpm > myWpm) setMyWpm(bestWpm);
 
                         // Update match history
-                        const history: MatchHistoryEntry[] = scoresData
+                        const history: MatchHistoryEntry[] = scores
                             .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                             .slice(0, 20)
                             .map(s => ({
@@ -170,11 +174,13 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
                     const { data: inventoryData } = await supabase
                         .from('user_inventory')
                         .select('item_id, quantity')
-                        .eq('user_id', userData.id);
+                        .eq('user_id', user.id);
 
-                    if (inventoryData) {
+                    const items = inventoryData as any[];
+
+                    if (items) {
                         const newInventory: Record<string, number> = {};
-                        inventoryData.forEach(item => {
+                        items.forEach(item => {
                             newInventory[item.item_id] = item.quantity;
                         });
                         setInventory(newInventory);
@@ -197,15 +203,15 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
             if (address) {
                 const email = user?.email?.address || user?.google?.email;
                 const googleId = user?.google?.subject;
-                
+
                 const userId = await ensureUserExists(supabase, address, {
                     email,
                     username: displayName,
                     googleId
-                });
-                
+                } as any);
+
                 if (userId) {
-                    await supabase.from('users').update({ username: displayName }).eq('id', userId);
+                    await (supabase.from('users') as any).update({ username: displayName }).eq('id', userId);
                 }
             }
         }
@@ -421,28 +427,28 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
                                     const currentFrame = isHovered ? frame : 0;
                                     const col = currentFrame % SPRITE_COLS;
                                     const row = Math.floor(currentFrame / SPRITE_COLS);
-                                    const bgX = -col * ZOMBIE_WIDTH;
-                                    const bgY = -row * ZOMBIE_HEIGHT;
+                                    const bgX = -col * ENEMY_WIDTH;
+                                    const bgY = -row * ENEMY_HEIGHT;
 
                                     return (
                                         <div
                                             key={achievement.id}
                                             style={mergeStyles(
-                                                styles.zombieCard,
-                                                achievement.unlocked ? styles.zombieCardUnlocked : {}
+                                                styles.enemyCard,
+                                                achievement.unlocked ? styles.enemyCardUnlocked : {}
                                             )}
                                             onMouseEnter={() => achievement.unlocked && setHoveredAchievement(achievement.id)}
                                             onMouseLeave={() => achievement.unlocked && setHoveredAchievement(null)}
                                         >
-                                            <div style={styles.zombieImageContainer}>
+                                            <div style={styles.enemyImageContainer}>
                                                 <div style={styles.achievementSprite(achievement.imagePath, bgX, bgY, SPRITE_WIDTH, SPRITE_HEIGHT, achievement.unlocked)} />
                                             </div>
                                             {achievement.unlocked ? (
-                                                <div style={mergeStyles(styles.zombieName, styles.zombieNameUnlocked)}>
+                                                <div style={mergeStyles(styles.enemyName, styles.enemyNameUnlocked)}>
                                                     {achievement.name}
                                                 </div>
                                             ) : (
-                                                <div style={styles.zombieStatus}>Classified</div>
+                                                <div style={styles.enemyStatus}>Classified</div>
                                             )}
                                         </div>
                                     );

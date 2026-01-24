@@ -12,7 +12,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onStart, onClose, d
   const { sfxMuted, sfxVolume } = useSoundSettings();
   const [showNudge, setShowNudge] = useState(false);
   const [inputValue, setInputValue] = useState('');
-  const targetWord = 'gmicrochains';
+  const targetWord = 'monad';
   const completed = inputValue.toLowerCase() === targetWord;
   const gunSoundRef = useRef<HTMLAudioElement | null>(null);
   const prevInputLengthRef = useRef<number>(0);
@@ -55,7 +55,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onStart, onClose, d
       const audio = gunSoundRef.current;
       if (audio) {
         audio.currentTime = 0;
-        void audio.play().catch(() => {});
+        void audio.play().catch(() => { });
       }
     }
   };
@@ -73,21 +73,21 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onStart, onClose, d
     <div className={styles.onboardingScreen}>
       <h1 className={styles.title}>How to Play</h1>
       <ul className={styles.instructions}>
-        <li>Type the word at each zombie to eliminate it.</li>
+        <li>Type the word at each enemy to eliminate it.</li>
         <li>Faster typing == higher score.</li>
-        <li>You have 3 lives. Zombies reaching your base cost you a life.</li>
+        <li>You have 10 lives. Enemies reaching your base cost you a life.</li>
         <li>Press ESC to clear the word and start over.</li>
       </ul>
       <p className={styles.tryTyping}>
         Try typing below!
       </p>
-      <div className={styles.demoZombie}>
+      <div className={styles.demoEnemy}>
         <div className={styles.healthBar}>
           <div className={styles.healthBarFill} style={{
             width: `${((targetWord.length - matchedLength) / targetWord.length) * 100}%`,
           }} />
         </div>
-        <div className={styles.zombieEmoji}>🧟‍♂️</div>
+        <div className={styles.enemyEmoji}>👾</div>
         <div className={styles.wordLabel}>
           {targetWord}
         </div>

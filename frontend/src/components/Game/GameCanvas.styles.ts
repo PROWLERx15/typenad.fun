@@ -195,6 +195,9 @@ export const styles = {
     gap: '6px',
     marginTop: '-10px',
     marginRight: '10px',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    maxWidth: '430px',
   } as CSSProperties,
 
   heartImage: {

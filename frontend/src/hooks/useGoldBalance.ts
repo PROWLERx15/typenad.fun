@@ -45,9 +45,9 @@ export function useGoldBalance() {
                 }
 
                 if (data) {
-                    console.log('✅ Gold loaded from database:', data.gold);
-                    setGold(data.gold);
-                    localStorage.setItem('playerGold', data.gold.toString());
+                    console.log('✅ Gold loaded from database:', (data as any).gold);
+                    setGold((data as any).gold);
+                    localStorage.setItem('playerGold', (data as any).gold.toString());
                 }
             } catch (err: any) {
                 console.error('❌ Failed to load gold:', err.message || err);
@@ -86,8 +86,7 @@ export function useGoldBalance() {
         // Async database update
         if (address && isConnected) {
             try {
-                const { error: updateError } = await supabase
-                    .from('users')
+                const { error: updateError } = await (supabase.from('users') as any)
                     .update({ gold: newGold })
                     .eq('wallet_address', address);
 

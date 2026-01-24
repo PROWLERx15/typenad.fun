@@ -76,9 +76,9 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ onClose, totalGold = 0, onPurch
                     .eq('wallet_address', address)
                     .single();
 
-                if (userData && userData.gold !== undefined) {
-                    setCurrentGold(userData.gold);
-                    localStorage.setItem(STORAGE_KEYS.PLAYER_GOLD, userData.gold.toString());
+                if (userData && (userData as any).gold !== undefined) {
+                    setCurrentGold((userData as any).gold);
+                    localStorage.setItem(STORAGE_KEYS.PLAYER_GOLD, (userData as any).gold.toString());
                 }
 
                 // 2. Get User Inventory
@@ -92,11 +92,12 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ onClose, totalGold = 0, onPurch
                     const { data: inventoryData } = await supabase
                         .from('user_inventory')
                         .select('item_id, quantity')
-                        .eq('user_id', userDataId.id);
+                        .eq('user_id', (userDataId as any).id);
 
                     if (inventoryData) {
                         const newInventory: Record<string, number> = {};
-                        inventoryData.forEach(item => {
+                        const items = inventoryData as any[];
+                        items.forEach(item => {
                             newInventory[item.item_id] = item.quantity;
                         });
                         setInventory(newInventory);
@@ -154,9 +155,9 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ onClose, totalGold = 0, onPurch
             // Supabase update
             if (address) {
                 // Get user data from Privy
-                const email = user?.email?.address || user?.google?.email;
-                const username = user?.google?.name;
-                const googleId = user?.google?.subject;
+                const email = (user?.email?.address || user?.google?.email) || undefined;
+                const username = user?.google?.name || undefined;
+                const googleId = user?.google?.subject || undefined;
 
                 // 1. Get User ID
                 const userId = await ensureUserExists(supabase, address, {
@@ -167,8 +168,7 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ onClose, totalGold = 0, onPurch
 
                 if (userId) {
                     // 2. Update Gold
-                    await supabase
-                        .from('users')
+                    await (supabase.from('users') as any)
                         .update({ gold: newGold })
                         .eq('id', userId);
 
@@ -181,14 +181,12 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ onClose, totalGold = 0, onPurch
                         .single();
 
                     if (existingItem) {
-                        await supabase
-                            .from('user_inventory')
-                            .update({ quantity: existingItem.quantity + 1 })
+                        await (supabase.from('user_inventory') as any)
+                            .update({ quantity: (existingItem as any).quantity + 1 })
                             .eq('user_id', userId)
                             .eq('item_id', item.id);
                     } else {
-                        await supabase
-                            .from('user_inventory')
+                        await (supabase.from('user_inventory') as any)
                             .insert({
                                 user_id: userId,
                                 item_id: item.id,

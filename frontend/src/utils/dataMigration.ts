@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabase } from '../lib/supabaseClient';
-import { 
-    getPlayerStats, 
-    getMatchHistory, 
+import {
+    getPlayerStats,
+    getMatchHistory,
     getPowerupInventory,
-    STORAGE_KEYS 
+    STORAGE_KEYS,
+    MatchHistoryEntry
 } from '../constants/gameStats';
 
 interface LocalData {
@@ -20,7 +22,7 @@ interface LocalData {
         personalBestWpm: number;
     };
     inventory: Record<string, number>;
-    matchHistory: any[];
+    matchHistory: MatchHistoryEntry[];
     killedTypes: number[];
 }
 
@@ -35,7 +37,7 @@ export function collectLocalData(walletAddress: string): LocalData {
     const stats = getPlayerStats();
     const inventory = getPowerupInventory();
     const matchHistory = getMatchHistory();
-    
+
     return {
         walletAddress,
         username: localStorage.getItem(STORAGE_KEYS.DISPLAY_NAME),
@@ -64,10 +66,10 @@ export async function migrateToSupabase(walletAddress: string): Promise<{
 }> {
     try {
         console.log('🔄 Starting migration for:', walletAddress);
-        
+
         // Collect local data
         const localData = collectLocalData(walletAddress);
-        
+
         // 1. Create or get user
         let userId: string;
         const { data: existingUser } = await supabase
@@ -77,25 +79,25 @@ export async function migrateToSupabase(walletAddress: string): Promise<{
             .single();
 
         if (existingUser) {
-            userId = existingUser.id;
+            userId = (existingUser as any).id;
             console.log('✅ User exists:', userId);
-            
+
             // Update user data (merge gold - take higher value)
-            const mergedGold = Math.max(existingUser.gold || 0, localData.gold);
-            await supabase
-                .from('users')
+            const mergedGold = Math.max((existingUser as any).gold || 0, localData.gold);
+            await (supabase
+                .from('users') as any)
                 .update({
                     username: localData.username || `Player ${walletAddress.slice(0, 6)}`,
                     gold: mergedGold,
                     last_seen_at: new Date().toISOString(),
                 })
                 .eq('id', userId);
-            
+
             console.log('✅ User updated with gold:', mergedGold);
         } else {
             // Create new user
-            const { data: newUser, error: createError } = await supabase
-                .from('users')
+            const { data: newUser, error: createError } = await (supabase
+                .from('users') as any)
                 .insert({
                     wallet_address: walletAddress,
                     username: localData.username || `Player ${walletAddress.slice(0, 6)}`,
@@ -108,7 +110,7 @@ export async function migrateToSupabase(walletAddress: string): Promise<{
                 throw new Error(`Failed to create user: ${createError?.message}`);
             }
 
-            userId = newUser.id;
+            userId = (newUser as any).id;
             console.log('✅ User created:', userId);
         }
 
@@ -124,18 +126,18 @@ export async function migrateToSupabase(walletAddress: string): Promise<{
 
                 if (existingItem) {
                     // Add to existing quantity
-                    await supabase
-                        .from('user_inventory')
+                    await (supabase
+                        .from('user_inventory') as any)
                         .update({
-                            quantity: existingItem.quantity + quantity,
+                            quantity: (existingItem as any).quantity + quantity,
                             updated_at: new Date().toISOString(),
                         })
                         .eq('user_id', userId)
                         .eq('item_id', itemId);
                 } else {
                     // Create new inventory item
-                    await supabase
-                        .from('user_inventory')
+                    await (supabase
+                        .from('user_inventory') as any)
                         .insert({
                             user_id: userId,
                             item_id: itemId,
@@ -159,8 +161,8 @@ export async function migrateToSupabase(walletAddress: string): Promise<{
                 .single();
 
             if (!existingMatch) {
-                await supabase
-                    .from('game_scores')
+                await (supabase
+                    .from('game_scores') as any)
                     .insert({
                         user_id: userId,
                         score: match.score,
@@ -177,7 +179,7 @@ export async function migrateToSupabase(walletAddress: string): Promise<{
         // 4. Migrate achievements (killed enemy types)
         for (const enemyTypeId of localData.killedTypes) {
             const achievementId = `enemy_type_${enemyTypeId}`;
-            
+
             const { data: existingAchievement } = await supabase
                 .from('user_achievements')
                 .select('id')
@@ -186,8 +188,8 @@ export async function migrateToSupabase(walletAddress: string): Promise<{
                 .single();
 
             if (!existingAchievement) {
-                await supabase
-                    .from('user_achievements')
+                await (supabase
+                    .from('user_achievements') as any)
                     .insert({
                         user_id: userId,
                         achievement_id: achievementId,
@@ -199,15 +201,15 @@ export async function migrateToSupabase(walletAddress: string): Promise<{
         // 5. Mark migration as complete
         localStorage.setItem('migration_completed', 'true');
         localStorage.setItem('migration_date', new Date().toISOString());
-        
+
         console.log('🎉 Migration completed successfully!');
         return { success: true };
 
     } catch (error) {
         console.error('❌ Migration failed:', error);
-        return { 
-            success: false, 
-            error: error instanceof Error ? error.message : 'Unknown error' 
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
         };
     }
 }
@@ -217,11 +219,11 @@ export async function migrateToSupabase(walletAddress: string): Promise<{
  */
 export function needsMigration(): boolean {
     if (typeof window === 'undefined') return false;
-    
+
     const migrationCompleted = localStorage.getItem('migration_completed');
     const migrationSkipped = localStorage.getItem('migration_skipped');
     const hasLocalData = localStorage.getItem(STORAGE_KEYS.TOTAL_GAMES) !== null;
-    
+
     return !migrationCompleted && !migrationSkipped && hasLocalData;
 }
 
@@ -230,19 +232,19 @@ export function needsMigration(): boolean {
  */
 export function clearLocalData() {
     if (typeof window === 'undefined') return;
-    
+
     const keysToKeep = [
         'migration_completed',
         'migration_date',
         'migration_skipped',
         'seenOnboarding',
     ];
-    
+
     Object.values(STORAGE_KEYS).forEach(key => {
         if (!keysToKeep.includes(key)) {
             localStorage.removeItem(key);
         }
     });
-    
+
     console.log('🧹 Local data cleared');
 }

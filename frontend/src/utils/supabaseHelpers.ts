@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { SupabaseClient } from '@supabase/supabase-js';
 
 export interface UserCreationData {
@@ -21,11 +22,11 @@ export const ensureUserExists = async (
             .eq('wallet_address', walletAddress)
             .single();
 
-        let existingUser = data as { id: string; gold: number; username: string | null; email: string | null } | null;
+        const existingUser = data as { id: string; gold: number; username: string | null; email: string | null } | null;
 
         if (existingUser?.id) {
             // Update last_seen_at and any new data
-            const updateData: any = {
+            const updateData: Record<string, unknown> = {
                 last_seen_at: new Date().toISOString()
             };
 
@@ -39,8 +40,8 @@ export const ensureUserExists = async (
                 updateData.username = userData.username;
             }
 
-            await supabase
-                .from('users')
+            await (supabase
+                .from('users') as any)
                 .update(updateData)
                 .eq('id', existingUser.id);
 
@@ -48,7 +49,7 @@ export const ensureUserExists = async (
         }
 
         // 2. Create new user with all available data
-        const insertData: any = {
+        const insertData: Record<string, unknown> = {
             wallet_address: walletAddress,
             username: userData?.username || `Player ${walletAddress.slice(0, 6)}`,
             gold: 0
@@ -58,8 +59,8 @@ export const ensureUserExists = async (
         if (userData?.googleId) insertData.google_id = userData.googleId;
         if (userData?.profilePicture) insertData.profile_picture = userData.profilePicture;
 
-        const { data: newUser, error: createError } = await supabase
-            .from('users')
+        const { data: newUser, error: createError } = await (supabase
+            .from('users') as any)
             .insert(insertData)
             .select('id')
             .single();
@@ -77,7 +78,7 @@ export const ensureUserExists = async (
             throw createError;
         }
 
-        return newUser?.id || null;
+        return (newUser as any)?.id || null;
     } catch (err) {
         console.error('Error ensuring user exists:', err);
         return null;
@@ -94,10 +95,10 @@ export const syncPowerupConsumption = async (
     powerupIds: string[]
 ): Promise<void> => {
     if (powerupIds.length === 0) return;
-    
+
     try {
         console.log('🎯 Syncing powerup consumption to database...', powerupIds);
-        
+
         // Get user ID
         const { data: userData } = await supabase
             .from('users')
@@ -115,18 +116,18 @@ export const syncPowerupConsumption = async (
             const { data: currentItem } = await supabase
                 .from('user_inventory')
                 .select('quantity')
-                .eq('user_id', userData.id)
+                .eq('user_id', (userData as any).id)
                 .eq('item_id', powerupId)
                 .single();
 
-            if (currentItem && currentItem.quantity > 0) {
-                const { error } = await supabase
-                    .from('user_inventory')
+            if (currentItem && (currentItem as any).quantity > 0) {
+                const { error } = await (supabase
+                    .from('user_inventory') as any)
                     .update({
-                        quantity: currentItem.quantity - 1,
+                        quantity: (currentItem as any).quantity - 1,
                         updated_at: new Date().toISOString()
                     })
-                    .eq('user_id', userData.id)
+                    .eq('user_id', (userData as any).id)
                     .eq('item_id', powerupId);
 
                 if (error) {

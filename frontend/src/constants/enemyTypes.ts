@@ -3,14 +3,14 @@
  * Maps enemy type names to numeric IDs (for future Monad chain storage)
  * 
  * SPACE THEME:
- * - scout: Basic enemy ship (was zombie)
- * - cruiser: Medium warship (was mummy)
- * - drone: Fast swarmer (was bat)
- * - mothership: 2-hit boss (was deathrider)
- * - asteroid: AoE explosion (was bomb)
- * - mech: Heavy robot (was frankenstein)
- * - interceptor: Fast attacker (was werewolf)
- * - dreadnought: 3-hit final boss (was dracula)
+ * - scout: Basic enemy ship
+ * - cruiser: Medium warship
+ * - drone: Fast swarmer
+ * - mothership: 2-hit boss
+ * - asteroid: AoE explosion
+ * - mech: Heavy robot
+ * - interceptor: Fast attacker
+ * - dreadnought: 3-hit final boss
  */
 
 export const ENEMY_TYPE_IDS = {

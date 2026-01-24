@@ -210,7 +210,7 @@ export const styles = {
     marginTop: '20px',
   } as CSSProperties,
 
-  zombieCard: {
+  enemyCard: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -221,12 +221,12 @@ export const styles = {
     transition: TRANSITIONS.default,
   } as CSSProperties,
 
-  zombieCardUnlocked: {
+  enemyCardUnlocked: {
     borderColor: COLORS.primary,
     background: 'rgba(139,92,246,0.1)',
   } as CSSProperties,
 
-  zombieImageContainer: {
+  enemyImageContainer: {
     width: '80px',
     height: '80px',
     display: 'flex',
@@ -243,7 +243,7 @@ export const styles = {
     opacity: 0.5,
   } as CSSProperties,
 
-  zombieName: {
+  enemyName: {
     fontFamily: FONTS.primary,
     fontSize: '10px',
     color: COLORS.white,
@@ -251,11 +251,11 @@ export const styles = {
     textAlign: 'center',
   } as CSSProperties,
 
-  zombieNameUnlocked: {
+  enemyNameUnlocked: {
     color: COLORS.primary,
   } as CSSProperties,
 
-  zombieStatus: {
+  enemyStatus: {
     fontFamily: FONTS.primary,
     fontSize: '10px',
     color: COLORS.gray,
