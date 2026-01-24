@@ -24,10 +24,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Get user ID
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('wallet_address', walletAddress.toLowerCase())
+      .single();
+
+    if (!user) {
+      return NextResponse.json({
+        success: true,
+        data: { achievements: [] },
+      });
+    }
+
     const { data, error } = await supabase
       .from('user_achievements')
       .select('*')
-      .eq('wallet_address', walletAddress.toLowerCase())
+      .eq('user_id', user.id)
       .order('unlocked_at', { ascending: false });
 
     if (error) throw error;
@@ -71,11 +85,25 @@ export async function POST(request: NextRequest) {
 
     const userAddress = walletAddress.toLowerCase();
 
+    // Get user ID
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('wallet_address', userAddress)
+      .single();
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
     // Check if already unlocked
     const { data: existing } = await supabase
       .from('user_achievements')
       .select('id')
-      .eq('wallet_address', userAddress)
+      .eq('user_id', user.id)
       .eq('achievement_id', achievementId)
       .single();
 
@@ -90,7 +118,7 @@ export async function POST(request: NextRequest) {
     const { error } = await supabase
       .from('user_achievements')
       .insert({
-        wallet_address: userAddress,
+        user_id: user.id,
         achievement_id: achievementId,
         unlocked_at: new Date().toISOString(),
       });

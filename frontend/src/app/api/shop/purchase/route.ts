@@ -49,10 +49,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user's gold balance
+    // Get user details (id + gold)
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('gold_balance')
+      .select('id, gold')
       .eq('wallet_address', userAddress)
       .single();
 
@@ -64,9 +64,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has enough gold
-    if (user.gold_balance < item.gold_price) {
+    if (user.gold < item.gold_price) {
       return NextResponse.json(
-        { success: false, error: 'Insufficient gold', data: { needed: item.gold_price, have: user.gold_balance } },
+        { success: false, error: 'Insufficient gold', data: { needed: item.gold_price, have: user.gold } },
         { status: 400 }
       );
     }
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       const { data: existingItem } = await supabase
         .from('user_inventory')
         .select('id, quantity')
-        .eq('wallet_address', userAddress)
+        .eq('user_id', user.id)
         .eq('item_id', itemId)
         .single();
 
@@ -92,8 +92,8 @@ export async function POST(request: NextRequest) {
     // Deduct gold
     const { error: goldError } = await supabase
       .from('users')
-      .update({ gold_balance: user.gold_balance - item.gold_price })
-      .eq('wallet_address', userAddress);
+      .update({ gold: user.gold - item.gold_price })
+      .eq('id', user.id);
 
     if (goldError) throw goldError;
 
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     const { data: existingInventory } = await supabase
       .from('user_inventory')
       .select('id, quantity')
-      .eq('wallet_address', userAddress)
+      .eq('user_id', user.id)
       .eq('item_id', itemId)
       .single();
 
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       // Increment quantity for consumables
       const { error: updateError } = await supabase
         .from('user_inventory')
-        .update({ quantity: existingInventory.quantity + 1 })
+        .update({ quantity: existingInventory.quantity + 1, updated_at: new Date().toISOString() })
         .eq('id', existingInventory.id);
 
       if (updateError) throw updateError;
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
       const { error: insertError } = await supabase
         .from('user_inventory')
         .insert({
-          wallet_address: userAddress,
+          user_id: user.id,
           item_id: itemId,
           item_type: item.category,
           equipped: false,
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
           name: item.name,
           category: item.category,
         },
-        newBalance: user.gold_balance - item.gold_price,
+        newBalance: user.gold - item.gold_price,
       },
     });
   } catch (error) {

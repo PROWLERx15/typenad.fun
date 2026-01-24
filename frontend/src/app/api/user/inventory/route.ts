@@ -24,6 +24,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Get user ID
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('wallet_address', walletAddress.toLowerCase())
+      .single();
+
+    if (!user) {
+      return NextResponse.json({
+        success: true,
+        data: { inventory: [] },
+      });
+    }
+
     const { data, error } = await supabase
       .from('user_inventory')
       .select(`
@@ -35,8 +49,8 @@ export async function GET(request: NextRequest) {
           gold_price
         )
       `)
-      .eq('wallet_address', walletAddress.toLowerCase())
-      .order('created_at', { ascending: false });
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false });
 
     if (error) throw error;
 
@@ -79,12 +93,26 @@ export async function POST(request: NextRequest) {
 
     const userAddress = walletAddress.toLowerCase();
 
+    // Get user ID
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('wallet_address', userAddress)
+      .single();
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
     // Get the inventory item
     const { data: item, error: itemError } = await supabase
       .from('user_inventory')
       .select('*')
       .eq('id', inventoryId)
-      .eq('wallet_address', userAddress)
+      .eq('user_id', user.id)
       .single();
 
     if (itemError || !item) {
@@ -100,13 +128,13 @@ export async function POST(request: NextRequest) {
         await supabase
           .from('user_inventory')
           .update({ equipped: false })
-          .eq('wallet_address', userAddress)
-          .eq('item_type', item.item_type);
+          .eq('user_id', user.id)
+          .eq('item_type', item.item_type || 'hero'); // Default fallback
 
         // Equip this item
         const { error } = await supabase
           .from('user_inventory')
-          .update({ equipped: true })
+          .update({ equipped: true, updated_at: new Date().toISOString() })
           .eq('id', inventoryId);
 
         if (error) throw error;
@@ -116,7 +144,7 @@ export async function POST(request: NextRequest) {
       case 'unequip': {
         const { error } = await supabase
           .from('user_inventory')
-          .update({ equipped: false })
+          .update({ equipped: false, updated_at: new Date().toISOString() })
           .eq('id', inventoryId);
 
         if (error) throw error;
@@ -143,7 +171,7 @@ export async function POST(request: NextRequest) {
           // Decrement quantity
           const { error } = await supabase
             .from('user_inventory')
-            .update({ quantity: item.quantity - 1 })
+            .update({ quantity: item.quantity - 1, updated_at: new Date().toISOString() })
             .eq('id', inventoryId);
 
           if (error) throw error;

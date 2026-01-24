@@ -1,8 +1,9 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- TYPENAD COMPLETE DATABASE SCHEMA
--- Version: 1.0.0
+-- Version: 1.1.0
 -- Description: Complete schema for TypeNad game including users, scores, 
---              inventory, achievements, and duel synchronization
+--              inventory, achievements, and duel synchronization.
+--              Includes idempotent column checks to fix "column does not exist" errors.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 -- Enable required extensions
@@ -14,20 +15,61 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS public.users (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     wallet_address TEXT UNIQUE NOT NULL,
-    username TEXT,
-    email TEXT,
-    google_id TEXT,
-    profile_picture TEXT,
-    gold INTEGER DEFAULT 0 NOT NULL,
-    total_games INTEGER DEFAULT 0 NOT NULL,
-    total_kills INTEGER DEFAULT 0 NOT NULL,
-    total_words_typed INTEGER DEFAULT 0 NOT NULL,
-    best_streak INTEGER DEFAULT 0 NOT NULL,
-    best_score INTEGER DEFAULT 0 NOT NULL,
-    best_wpm INTEGER DEFAULT 0 NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
-    last_seen_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
+
+-- Ensure all columns exist (Migration fix for existing tables)
+DO $$
+BEGIN
+    -- Add columns if they don't exist
+    BEGIN
+        ALTER TABLE public.users ADD COLUMN username TEXT;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.users ADD COLUMN email TEXT;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.users ADD COLUMN google_id TEXT;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.users ADD COLUMN profile_picture TEXT;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.users ADD COLUMN gold INTEGER DEFAULT 0 NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.users ADD COLUMN total_games INTEGER DEFAULT 0 NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.users ADD COLUMN total_kills INTEGER DEFAULT 0 NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.users ADD COLUMN total_words_typed INTEGER DEFAULT 0 NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.users ADD COLUMN best_streak INTEGER DEFAULT 0 NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.users ADD COLUMN best_score INTEGER DEFAULT 0 NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.users ADD COLUMN best_wpm INTEGER DEFAULT 0 NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.users ADD COLUMN last_seen_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW());
+    EXCEPTION WHEN duplicate_column THEN END;
+END $$;
 
 -- Users indexes
 CREATE INDEX IF NOT EXISTS idx_users_wallet_address ON public.users(wallet_address);
@@ -45,20 +87,60 @@ CREATE INDEX IF NOT EXISTS idx_users_gold ON public.users(gold DESC);
 CREATE TABLE IF NOT EXISTS public.game_scores (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-    score INTEGER DEFAULT 0 NOT NULL,
-    wave_reached INTEGER DEFAULT 1 NOT NULL,
-    wpm INTEGER DEFAULT 0 NOT NULL,
-    game_mode TEXT DEFAULT 'story' NOT NULL,
-    kills INTEGER DEFAULT 0 NOT NULL,
-    misses INTEGER DEFAULT 0,
-    typos INTEGER DEFAULT 0,
-    gold_earned INTEGER DEFAULT 0,
-    duration_seconds INTEGER,
-    is_staked BOOLEAN DEFAULT FALSE,
-    stake_amount BIGINT,
-    payout_amount BIGINT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
+
+-- Ensure all columns exist
+DO $$
+BEGIN
+    BEGIN
+        ALTER TABLE public.game_scores ADD COLUMN score INTEGER DEFAULT 0 NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.game_scores ADD COLUMN wave_reached INTEGER DEFAULT 1 NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.game_scores ADD COLUMN wpm INTEGER DEFAULT 0 NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.game_scores ADD COLUMN game_mode TEXT DEFAULT 'story' NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.game_scores ADD COLUMN kills INTEGER DEFAULT 0 NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.game_scores ADD COLUMN misses INTEGER DEFAULT 0;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.game_scores ADD COLUMN typos INTEGER DEFAULT 0;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.game_scores ADD COLUMN gold_earned INTEGER DEFAULT 0;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.game_scores ADD COLUMN duration_seconds INTEGER;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.game_scores ADD COLUMN is_staked BOOLEAN DEFAULT FALSE;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.game_scores ADD COLUMN stake_amount BIGINT;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.game_scores ADD COLUMN payout_amount BIGINT;
+    EXCEPTION WHEN duplicate_column THEN END;
+END $$;
 
 -- Game scores indexes
 CREATE INDEX IF NOT EXISTS idx_game_scores_user_id ON public.game_scores(user_id);
@@ -75,10 +157,24 @@ CREATE TABLE IF NOT EXISTS public.user_inventory (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
     item_id TEXT NOT NULL,
-    quantity INTEGER DEFAULT 0 NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     UNIQUE(user_id, item_id)
 );
+
+DO $$
+BEGIN
+    BEGIN
+        ALTER TABLE public.user_inventory ADD COLUMN quantity INTEGER DEFAULT 0 NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.user_inventory ADD COLUMN item_type TEXT DEFAULT 'consumable' NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.user_inventory ADD COLUMN equipped BOOLEAN DEFAULT FALSE NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+END $$;
 
 -- Inventory indexes
 CREATE INDEX IF NOT EXISTS idx_user_inventory_user_id ON public.user_inventory(user_id);
@@ -106,14 +202,32 @@ CREATE TABLE IF NOT EXISTS public.duel_results (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     duel_id TEXT NOT NULL,
     player_address TEXT NOT NULL,
-    score INTEGER DEFAULT 0 NOT NULL,
-    wpm INTEGER DEFAULT 0 NOT NULL,
-    misses INTEGER DEFAULT 0 NOT NULL,
-    typos INTEGER DEFAULT 0 NOT NULL,
-    submitted_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     UNIQUE(duel_id, player_address)
 );
+
+DO $$
+BEGIN
+    BEGIN
+        ALTER TABLE public.duel_results ADD COLUMN score INTEGER DEFAULT 0 NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.duel_results ADD COLUMN wpm INTEGER DEFAULT 0 NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.duel_results ADD COLUMN misses INTEGER DEFAULT 0 NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.duel_results ADD COLUMN typos INTEGER DEFAULT 0 NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.duel_results ADD COLUMN submitted_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL;
+    EXCEPTION WHEN duplicate_column THEN END;
+END $$;
 
 -- Duel results indexes
 CREATE INDEX IF NOT EXISTS idx_duel_results_duel_id ON public.duel_results(duel_id);
@@ -126,14 +240,32 @@ CREATE INDEX IF NOT EXISTS idx_duel_results_created_at ON public.duel_results(cr
 CREATE TABLE IF NOT EXISTS public.shop_items (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
-    description TEXT,
-    category TEXT NOT NULL DEFAULT 'hero',
     gold_price INTEGER NOT NULL,
-    available BOOLEAN DEFAULT TRUE,
-    image_url TEXT,
-    metadata JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
+
+DO $$
+BEGIN
+    BEGIN
+        ALTER TABLE public.shop_items ADD COLUMN description TEXT;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.shop_items ADD COLUMN category TEXT NOT NULL DEFAULT 'hero';
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.shop_items ADD COLUMN available BOOLEAN DEFAULT TRUE;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.shop_items ADD COLUMN image_url TEXT;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.shop_items ADD COLUMN metadata JSONB DEFAULT '{}';
+    EXCEPTION WHEN duplicate_column THEN END;
+END $$;
 
 -- Shop items indexes
 CREATE INDEX IF NOT EXISTS idx_shop_items_category ON public.shop_items(category);
@@ -147,17 +279,44 @@ CREATE TABLE IF NOT EXISTS public.duel_matches (
     duel_id TEXT UNIQUE NOT NULL,
     player1_address TEXT NOT NULL,
     player2_address TEXT NOT NULL,
-    winner_address TEXT,
     stake_amount BIGINT NOT NULL,
-    payout_amount BIGINT,
-    player1_score INTEGER DEFAULT 0,
-    player2_score INTEGER DEFAULT 0,
-    player1_wpm INTEGER DEFAULT 0,
-    player2_wpm INTEGER DEFAULT 0,
-    settled_at TIMESTAMP WITH TIME ZONE,
-    tx_hash TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
+
+DO $$
+BEGIN
+    BEGIN
+        ALTER TABLE public.duel_matches ADD COLUMN winner_address TEXT;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.duel_matches ADD COLUMN payout_amount BIGINT;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.duel_matches ADD COLUMN player1_score INTEGER DEFAULT 0;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.duel_matches ADD COLUMN player2_score INTEGER DEFAULT 0;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.duel_matches ADD COLUMN player1_wpm INTEGER DEFAULT 0;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.duel_matches ADD COLUMN player2_wpm INTEGER DEFAULT 0;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.duel_matches ADD COLUMN settled_at TIMESTAMP WITH TIME ZONE;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.duel_matches ADD COLUMN tx_hash TEXT;
+    EXCEPTION WHEN duplicate_column THEN END;
+END $$;
 
 -- Duel matches indexes
 CREATE INDEX IF NOT EXISTS idx_duel_matches_duel_id ON public.duel_matches(duel_id);
@@ -233,9 +392,17 @@ USING (true);
 -- ENABLE REALTIME FOR DUEL SYNC
 -- ═══════════════════════════════════════════════════════════════════════════════
 
--- Add tables to realtime publication
-ALTER PUBLICATION supabase_realtime ADD TABLE public.duel_results;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.duel_matches;
+-- Add tables to realtime publication (check existence first not to error)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'duel_results') THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.duel_results;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'duel_matches') THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.duel_matches;
+    END IF;
+END $$;
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- FUNCTIONS
