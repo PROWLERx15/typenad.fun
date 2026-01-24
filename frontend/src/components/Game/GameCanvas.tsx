@@ -226,6 +226,13 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
             setTargetedEnemyId(null);
             prevInputLengthRef.current = 0;
 
+            // For staked mode, trigger game over when survival timer ends (wave completes)
+            if (gameMode === 'staked') {
+                console.log('🎮 Staked survival timer ended - triggering game over for settlement');
+                onGameOver();
+                return;
+            }
+
             onWaveComplete?.(waveSystem.currentWave);
             if (onQuestProgress && (killsThisSession.current > 0 || droneKillsThisSession.current > 0)) {
                 onQuestProgress(killsThisSession.current, droneKillsThisSession.current);
@@ -233,7 +240,16 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
                 droneKillsThisSession.current = 0;
             }
         }
-    }, [pvpMode, waveSystem.waveState, waveSystem.currentWave, onWaveComplete, onQuestProgress, clearAllEnemies, waveSystem.waveConfig?.isSurvival]);
+    }, [pvpMode, waveSystem.waveState, waveSystem.currentWave, onWaveComplete, onQuestProgress, clearAllEnemies, waveSystem.waveConfig?.isSurvival, gameMode, onGameOver]);
+
+    // Auto-start wave for staked mode (no WavePreparing screen)
+    useEffect(() => {
+        if (gameMode === 'staked' && waveSystem.waveState === 'preparing') {
+            console.log('🎮 Auto-starting staked survival wave');
+            hasStartedFirstWave.current = true;
+            waveSystem.startWave();
+        }
+    }, [gameMode, waveSystem.waveState, waveSystem.startWave]);
 
     useEffect(() => {
         if (waveSystem.waveState === 'active' && inputRef.current) {
@@ -308,7 +324,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
 
         if (typing) {
             setIsTyping(prev => !prev);
-            
+
             // Track typos for staked/duel modes: a typo is when the new input doesn't match any enemy
             if ((gameMode === 'staked' || gameMode === 'duel') && input.length > 0) {
                 const hasMatchingEnemy = enemies.some((e) => e.word.startsWith(input));
@@ -490,7 +506,20 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
                             </div>
                         </>
                     )}
-                    {!pvpMode && waveSystem.waveConfig?.isSurvival && waveSystem.waveState === 'active' && (
+                    {gameMode === 'staked' && waveSystem.waveState === 'active' && (
+                        <>
+                            <div style={styles.pvpModeLabel}>
+                                ⚡ STAKED SURVIVAL
+                            </div>
+                            <div style={styles.pvpTimer(
+                                waveSystem.survivalTimeLeft > 40 ? 'lime' :
+                                    waveSystem.survivalTimeLeft > 15 ? 'yellow' : 'red'
+                            )}>
+                                {waveSystem.survivalTimeLeft}s
+                            </div>
+                        </>
+                    )}
+                    {!pvpMode && gameMode !== 'staked' && waveSystem.waveConfig?.isSurvival && waveSystem.waveState === 'active' && (
                         <div style={styles.pvpTimer(
                             waveSystem.survivalTimeLeft > 40 ? 'lime' :
                                 waveSystem.survivalTimeLeft > 15 ? 'yellow' : 'red'
@@ -533,7 +562,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
                 disabled={!pvpMode && waveSystem.waveState === 'preparing'}
                 style={styles.inputField(!pvpMode && waveSystem.waveState === 'preparing')}
             />
-            {!pvpMode && (waveSystem.waveState === 'preparing' || waveSystem.waveState === 'active') && (
+            {!pvpMode && gameMode !== 'staked' && (waveSystem.waveState === 'preparing' || waveSystem.waveState === 'active') && (
                 <WavePreparing
                     waveNumber={waveSystem.currentWave}
                     isSurvival={waveSystem.waveConfig?.isSurvival}
@@ -551,13 +580,13 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
                     isFirstWave={!hasStartedFirstWave.current}
                 />
             )}
-            {!pvpMode && waveSystem.waveState === 'betweenWaves' && (
+            {!pvpMode && gameMode !== 'staked' && waveSystem.waveState === 'betweenWaves' && (
                 <WaveComplete
                     waveNumber={waveSystem.currentWave}
                     nextWave={waveSystem.currentWave + 1}
                 />
             )}
-            {!pvpMode && waveSystem.waveState === 'complete' && waveSystem.currentWave === 9 && (
+            {!pvpMode && gameMode !== 'staked' && waveSystem.waveState === 'complete' && waveSystem.currentWave === 9 && (
                 <WaveVictory
                     onReturnHome={() => {
                         if (onReturnToStart) onReturnToStart();

@@ -81,6 +81,15 @@ const WAVE_CONFIGS: WaveConfig[] = [
     },
 ];
 
+// Staked mode uses a custom endless survival configuration
+const STAKED_SURVIVAL_CONFIG: WaveConfig = {
+    waveNumber: 1,
+    totalEnemies: Infinity,
+    enemyTypes: { scout: true, cruiser: true, drone: true, mothership: false, asteroid: true, mech: false, interceptor: false, dreadnought: false },
+    isSurvival: true,
+    survivalDuration: 60, // 1 minute time limit
+};
+
 const useWaveSystem = (restartSignal: boolean, pvpMode: boolean, gameMode: 'story' | 'timeAttack' | 'pvp' | 'staked' | 'duel' = 'story') => {
     const initialWave = gameMode === 'timeAttack' ? 9 : 1;
     const [currentWave, setCurrentWave] = useState(initialWave);
@@ -94,6 +103,8 @@ const useWaveSystem = (restartSignal: boolean, pvpMode: boolean, gameMode: 'stor
     const isCompletingWaveRef = useRef(false);
 
     const getCurrentWaveConfig = (): WaveConfig | null => {
+        // Staked mode uses custom endless survival config
+        if (gameMode === 'staked') return STAKED_SURVIVAL_CONFIG;
         if (pvpMode) return WAVE_CONFIGS[5];
         return WAVE_CONFIGS[currentWave - 1] || null;
     };
@@ -254,12 +265,13 @@ const useWaveSystem = (restartSignal: boolean, pvpMode: boolean, gameMode: 'stor
         const config = getCurrentWaveConfig();
         if (config?.isSurvival && config.survivalDuration) {
             const progress = 1 - (survivalTimeLeftRef.current / config.survivalDuration);
-            const baseDelay = 1500;
-            const minDelay = 300;
-            return (baseDelay - (baseDelay - minDelay) * progress) * Math.random() + 200;
+            // For staked mode, start faster and get even faster
+            const baseDelay = gameMode === 'staked' ? 1200 : 1500;
+            const minDelay = gameMode === 'staked' ? 200 : 300;
+            return (baseDelay - (baseDelay - minDelay) * progress) * Math.random() + 150;
         }
         return Math.random() * 1500 + 500;
-    }, [currentWave]);
+    }, [currentWave, gameMode]);
 
     useEffect(() => {
         return () => {
