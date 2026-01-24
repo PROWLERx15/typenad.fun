@@ -7,13 +7,13 @@ import { monadTestnet } from '../config/privy';
 import { TYPE_NAD_CONTRACT_ADDRESS } from '../contracts/contract';
 
 // USDC contract address on Monad Testnet
-export const USDC_ADDRESS = '0x534b2f3A21130d7a60830c2Df862319e593943A3' as const;
+export const USDC_ADDRESS = (process.env.NEXT_PUBLIC_USDC_ADDRESS || '0x534b2f3A21130d7a60830c2Df862319e593943A3') as const;
 
 // USDC has 6 decimals
 export const USDC_DECIMALS = 6;
 
 // RPC URL
-const RPC_URL = process.env.MONAD_RPC_TESTNET || 'https://testnet-rpc.monad.xyz';
+const RPC_URL = process.env.NEXT_PUBLIC_MONAD_RPC_TESTNET || 'https://testnet-rpc.monad.xyz';
 
 // Helper to format USDC amounts (6 decimals)
 export function formatUSDC(amount: bigint): string {
@@ -72,13 +72,24 @@ export function useUSDC() {
         throw new Error('No account provided');
       }
 
-      const balance = await publicClient.readContract({
-        address: USDC_ADDRESS,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [target],
-      });
-      return balance;
+      try {
+        console.log('Fetching USDC balance for:', target);
+        console.log('USDC Address:', USDC_ADDRESS);
+        console.log('RPC URL:', RPC_URL);
+
+        const balance = await publicClient.readContract({
+          address: USDC_ADDRESS,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [target],
+        });
+
+        console.log('USDC Balance fetched:', balance.toString());
+        return balance;
+      } catch (err) {
+        console.error('Failed to fetch USDC balance:', err);
+        throw err;
+      }
     },
     [publicClient, address]
   );

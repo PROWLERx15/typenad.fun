@@ -920,7 +920,7 @@ The TypeNad game is **fully functional** and ready for testnet deployment with t
 | Admin multisig | ⚠️ Missing | Set up for owner |
 | Verifier key management | ⚠️ Basic | Use HSM/KMS in production |
 
-### 💰 Fund Safety Assessment
+###  Fund Safety Assessment
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|------------|--------|------------|

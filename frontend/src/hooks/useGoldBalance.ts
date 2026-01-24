@@ -23,7 +23,7 @@ export function useGoldBalance() {
             setError(null);
 
             try {
-                console.log('💰 Loading gold for address:', address);
+                console.log('Loading gold for address:', address);
 
                 const { data, error: fetchError } = await supabase
                     .from('users')
@@ -77,7 +77,7 @@ export function useGoldBalance() {
 
     // Update gold both locally and in database
     const updateGold = useCallback(async (newGold: number) => {
-        console.log('💰 Updating gold to:', newGold);
+        console.log('Updating gold to:', newGold);
 
         // Immediate local update
         setGold(newGold);

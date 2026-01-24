@@ -23,11 +23,26 @@ export function useAuthSync() {
             // Don't sync again if already synced for this address
             if (synced) return;
 
-            setSyncing(true);
+            // Check if this is a returning user (has data in localStorage)
+            // If so, sync silently without showing loading screen
+            const existingWalletAddress = typeof window !== 'undefined'
+                ? localStorage.getItem('wallet_address')
+                : null;
+            const isReturningUser = existingWalletAddress === address;
+
+            // Only show loading screen for first-time users
+            // Returning users sync silently in the background
+            if (!isReturningUser) {
+                setSyncing(true);
+            }
             setError(null);
 
             try {
-                console.log('🔄 Starting auth sync for address:', address);
+                if (isReturningUser) {
+                    console.log('🔄 Silently syncing returning user:', address);
+                } else {
+                    console.log('🔄 Starting auth sync for new user:', address);
+                }
 
                 // 1. Extract user data from Privy
                 const email = user?.email?.address || user?.google?.email;
