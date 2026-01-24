@@ -3,9 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTypeNadContract } from '../../hooks/useTypeNadContract';
 import { usePrivyWallet } from '../../hooks/usePrivyWallet';
-import { formatUSDC } from '../../hooks/useUSDC';
 import { supabaseUntyped as supabase } from '../../lib/supabaseClient';
-import { styles as gameOverStyles } from './GameOver.styles';
+import DuelResultCard from './DuelResultCard';
 
 interface DuelGameOverProps {
   score: number;
@@ -304,164 +303,25 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
   const isWinner = winner === 'you';
 
   return (
-    <>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');`}</style>
-      <div style={gameOverStyles.container}>
-        <h1 style={gameOverStyles.title}>
-          {status === 'submitting'
-            ? '📤 Submitting...'
-            : waitingForOpponent
-              ? '⏳ Waiting for Opponent...'
-              : status === 'settled'
-                ? isWinner
-                  ? '🏆 You Win!'
-                  : '💀 You Lose!'
-                : 'Settling Duel...'}
-        </h1>
-
-        {/* Score Comparison */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '20px',
-            marginBottom: '20px',
-          }}
-        >
-          <div
-            style={{
-              padding: '16px',
-              backgroundColor: 'rgba(34, 197, 94, 0.1)',
-              borderRadius: '8px',
-              border: isWinner ? '2px solid #22c55e' : '2px solid transparent',
-            }}
-          >
-            <h3 style={{ color: '#22c55e', fontSize: '12px', marginBottom: '8px' }}>You</h3>
-            <p style={{ ...gameOverStyles.statText, fontSize: '14px' }}>{score}</p>
-            <p style={{ ...gameOverStyles.statText, fontSize: '10px', color: '#888' }}>{wpm} WPM</p>
-            <p style={{ ...gameOverStyles.statText, fontSize: '10px', color: '#666' }}>Misses: {missCount}</p>
-          </div>
-          <div
-            style={{
-              padding: '16px',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              borderRadius: '8px',
-              border: !isWinner && winner ? '2px solid #ef4444' : '2px solid transparent',
-            }}
-          >
-            <h3 style={{ color: '#ef4444', fontSize: '12px', marginBottom: '8px' }}>Opponent</h3>
-            {waitingForOpponent ? (
-              <p style={{ ...gameOverStyles.statText, fontSize: '10px', color: '#888' }}>Waiting...</p>
-            ) : (
-              <>
-                <p style={{ ...gameOverStyles.statText, fontSize: '14px' }}>{opponentScore}</p>
-                <p style={{ ...gameOverStyles.statText, fontSize: '10px', color: '#888' }}>{opponentWpm} WPM</p>
-                <p style={{ ...gameOverStyles.statText, fontSize: '10px', color: '#666' }}>Misses: {opponentMisses}</p>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Pot Info */}
-        <div
-          style={{
-            padding: '12px',
-            backgroundColor: 'rgba(139, 92, 246, 0.1)',
-            borderRadius: '8px',
-            marginBottom: '20px',
-          }}
-        >
-          <p style={{ ...gameOverStyles.statText, fontSize: '12px', color: '#888' }}>
-            Total Pot: {formatUSDC(totalPot)} USDC
-          </p>
-          <p style={{ ...gameOverStyles.statText, fontSize: '10px', color: '#666' }}>(10% platform fee on winnings)</p>
-        </div>
-
-        {/* Settlement Status */}
-        {status === 'submitting' && (
-          <p style={{ color: '#8B5CF6', fontSize: '12px', marginBottom: '16px' }}>
-            Submitting your results...
-          </p>
-        )}
-
-        {status === 'waiting' && waitingForOpponent && (
-          <p style={{ color: '#8B5CF6', fontSize: '12px', marginBottom: '16px' }}>
-            Waiting for opponent to finish...
-          </p>
-        )}
-
-        {status === 'settling' && (
-          <p style={{ color: '#8B5CF6', fontSize: '12px', marginBottom: '16px' }}>
-            Settlement in progress (no approval needed)...
-          </p>
-        )}
-
-        {status === 'settled' && (
-          <>
-            <p
-              style={{
-                color: isWinner ? '#22c55e' : '#ef4444',
-                fontSize: '16px',
-                marginBottom: '16px',
-                fontWeight: 'bold',
-              }}
-            >
-              {isWinner ? `You won ${formatUSDC(payout || 0n)} USDC!` : 'Better luck next time!'}
-            </p>
-            {txHash && (
-              <a
-                href={`https://testnet.monadexplorer.com/tx/${txHash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: '#8B5CF6', fontSize: '10px', textDecoration: 'underline' }}
-              >
-                View Transaction ↗
-              </a>
-            )}
-          </>
-        )}
-
-        {status === 'error' && (
-          <div style={{ marginBottom: '16px' }}>
-            <p style={{ color: '#ef4444', fontSize: '12px', marginBottom: '8px' }}>{error}</p>
-            <button
-              onClick={handleRetrySettlement}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#8B5CF6',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '10px',
-                fontFamily: '"Press Start 2P", monospace',
-              }}
-            >
-              Retry Settlement
-            </button>
-          </div>
-        )}
-
-        {/* Actions */}
-        {(status === 'settled' || status === 'error') && (
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
-            <button onClick={onRestart} style={gameOverStyles.button}>
-              New Duel
-            </button>
-            <button
-              onClick={onBackToMenu}
-              style={{
-                ...gameOverStyles.button,
-                backgroundColor: 'transparent',
-                border: '2px solid #8B5CF6',
-              }}
-            >
-              Back to Menu
-            </button>
-          </div>
-        )}
-      </div>
-    </>
+    <DuelResultCard
+      score={score}
+      wpm={wpm}
+      missCount={missCount}
+      opponentScore={opponentScore}
+      opponentWpm={opponentWpm}
+      opponentMisses={opponentMisses}
+      stakeAmount={stakeAmount}
+      totalPot={totalPot}
+      status={status}
+      payout={payout}
+      txHash={txHash}
+      error={error}
+      isWinner={isWinner}
+      waitingForOpponent={waitingForOpponent}
+      onRestart={onRestart}
+      onBackToMenu={onBackToMenu}
+      onRetrySettlement={handleRetrySettlement}
+    />
   );
 };
 
