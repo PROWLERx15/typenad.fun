@@ -554,3 +554,111 @@
 .resultCard::-webkit-scrollbar-thumb:hover {
   background: rgba(139, 92, 246, 0.5);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DUEL-SPECIFIC STYLES
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.duelComparisonGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 480px) {
+  .duelComparisonGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.comparisonBox {
+  padding: 16px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+
+.comparisonBox.winner {
+  background: rgba(0, 255, 136, 0.12);
+  border-color: rgba(0, 255, 136, 0.3);
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+}
+
+.playerLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: rgba(139, 92, 246, 0.7);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.comparisonStat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.comparisonValue {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 18px;
+  color: #A78BFA;
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+.comparisonLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: rgba(139, 92, 246, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.waitingPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  color: rgba(139, 92, 246, 0.6);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
+.potInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.potRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: #A78BFA;
+}
+
+.potLabel {
+  color: rgba(139, 92, 246, 0.7);
+}
+
+.potValue {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.potSubtext {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: rgba(139, 92, 246, 0.5);
+  line-height: 1.4;
+}
+
