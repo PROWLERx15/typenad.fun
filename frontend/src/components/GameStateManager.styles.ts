@@ -73,30 +73,6 @@ export const styles = {
     zIndex: 1001,
   }),
 
-  lineaBranding: {
-    position: 'absolute',
-    bottom: 15,
-    left: 15,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    color: COLORS.gray,
-    textAlign: 'center',
-    opacity: 0.7,
-  } as CSSProperties,
-
-  lineaBrandingText: {
-    fontSize: '11px',
-    fontFamily: FONTS.mono,
-    letterSpacing: '1px',
-  } as CSSProperties,
-
-  lineraLogo: {
-    width: '100px',
-    height: 'auto',
-    marginTop: '6px',
-    filter: 'brightness(0.9)',
-  } as CSSProperties,
 
   canonsImage: {
     position: 'fixed',

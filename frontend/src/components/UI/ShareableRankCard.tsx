@@ -223,7 +223,7 @@ const ShareableRankCard: React.FC<ShareableRankCardProps> = ({
       // Trim white borders
       const trimmedCanvas = trimCanvas(canvas);
 
-      const tweetText = `I'm a ${rankTitle} on typenad!\n\nScore: ${score.toLocaleString()}\nWPM: ${wpm || '-'}\n\nPlay now: https://typenad.fun\n\n#Typenad #Monad #SpeedTyping #Web3Gaming`;
+      const tweetText = `I'm a ${rankTitle} on Typenad!\n\nScore: ${score.toLocaleString()}\nWPM: ${wpm || '-'}\n\nPlay now: https://typenad.fun\n\n#Typenad #Monad #SpeedTyping #Web3Gaming`;
 
       // Try to use Web Share API with image (works on mobile and some desktop browsers)
       if (navigator.share && navigator.canShare) {
