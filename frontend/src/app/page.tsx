@@ -10,7 +10,7 @@ export default function Home() {
     return (
         <Providers>
             <div style={{
-                backgroundImage: 'url(/images/background_new.png)',
+                backgroundImage: 'url(/images/background-2.png)',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
