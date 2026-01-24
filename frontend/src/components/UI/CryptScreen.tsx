@@ -395,7 +395,7 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
 
                         {/* Shareable Rank Card */}
                         <div style={styles.section}>
-                            <h2 style={styles.sectionTitle}>Service ID Card</h2>
+                            <h2 style={styles.sectionTitle}>Aura Card</h2>
                             <ShareableRankCard
                                 score={myScore}
                                 wpm={myWpm}
