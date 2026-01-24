@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useTypeNadContract } from '../../hooks/useTypeNadContract';
 import { usePrivyWallet } from '../../hooks/usePrivyWallet';
 import ResultCard from './ResultCard';
 
@@ -162,116 +161,23 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
   const slashedAmount = penalizedMisses * PENALTY_AMOUNT;
 
   return (
-    <>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');`}</style>
-      <div style={gameOverStyles.container}>
-        <h1 style={gameOverStyles.title}>
-          {status === 'settled' ? (isProfit ? '🎉 Victory!' : '💀 Game Over') : 'Settling Game...'}
-        </h1>
-
-        {/* Game Stats */}
-        <div style={{ marginBottom: '20px' }}>
-          <p style={gameOverStyles.statText}>Score: {score}</p>
-          <p style={gameOverStyles.statText}>WPM: {wpm}</p>
-          <p style={gameOverStyles.statText}>Misses: {missCount}</p>
-          <p style={gameOverStyles.statText}>Typos: {typoCount}</p>
-        </div>
-
-        {/* Staking Info */}
-        <div
-          style={{
-            padding: '16px',
-            backgroundColor: 'rgba(139, 92, 246, 0.1)',
-            borderRadius: '8px',
-            marginBottom: '20px',
-          }}
-        >
-          <p style={{ ...gameOverStyles.statText, fontSize: '12px', color: '#888' }}>
-            Staked: {formatUSDC(stakeAmount)} USDC
-          </p>
-          <p style={{ ...gameOverStyles.statText, fontSize: '12px', color: '#888' }}>
-            Bonus (WPM): +{formatUSDC(bonusAmount)} USDC
-          </p>
-          {missCount > 10 && (
-            <p style={{ ...gameOverStyles.statText, fontSize: '12px', color: '#ef4444' }}>
-              Penalties ({missCount - 10} misses): -{formatUSDC(BigInt((missCount - 10) * 100_000))} USDC
-            </p>
-          )}
-        </div>
-
-        {/* Settlement Status */}
-        {status === 'settling' && (
-          <p style={{ color: '#8B5CF6', fontSize: '12px', marginBottom: '16px' }}>
-            Settlement in progress (no approval needed)...
-          </p>
-        )}
-
-        {status === 'settled' && (
-          <>
-            <p
-              style={{
-                color: isProfit ? '#22c55e' : '#ef4444',
-                fontSize: '16px',
-                marginBottom: '16px',
-                fontWeight: 'bold',
-              }}
-            >
-              Payout: {formatUSDC(payout || BigInt(0))} USDC
-            </p>
-            {txHash && (
-              <a
-                href={`https://testnet.monadexplorer.com/tx/${txHash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: '#8B5CF6', fontSize: '10px', textDecoration: 'underline' }}
-              >
-                View Transaction ↗
-              </a>
-            )}
-          </>
-        )}
-
-        {status === 'error' && (
-          <div style={{ marginBottom: '16px' }}>
-            <p style={{ color: '#ef4444', fontSize: '12px', marginBottom: '8px' }}>{error}</p>
-            <button
-              onClick={handleRetrySettlement}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#8B5CF6',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '10px',
-                fontFamily: '"Press Start 2P", monospace',
-              }}
-            >
-              Retry Settlement
-            </button>
-          </div>
-        )}
-
-        {/* Actions */}
-        {(status === 'settled' || status === 'error') && (
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
-            <button onClick={onRestart} style={gameOverStyles.button}>
-              Play Again
-            </button>
-            <button
-              onClick={onBackToMenu}
-              style={{
-                ...gameOverStyles.button,
-                backgroundColor: 'transparent',
-                border: '2px solid #8B5CF6',
-              }}
-            >
-              Back to Menu
-            </button>
-          </div>
-        )}
-      </div>
-    </>
+    <ResultCard
+      score={score}
+      wpm={wpm}
+      missCount={missCount}
+      typoCount={typoCount}
+      stakeAmount={stakeAmount}
+      bonusAmount={bonusAmount}
+      slashedAmount={slashedAmount}
+      finalPayout={payout}
+      txHash={txHash}
+      status={status}
+      error={error}
+      isProfit={isProfit}
+      onRestart={onRestart}
+      onBackToMenu={onBackToMenu}
+      onRetrySettle={handleRetrySettlement}
+    />
   );
 };
 

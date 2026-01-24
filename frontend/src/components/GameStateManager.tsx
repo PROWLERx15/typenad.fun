@@ -535,7 +535,7 @@ const GameStateManager: React.FC = () => {
                                     selectedPowerups={selectedPowerups}
                                     onPowerupsChange={setSelectedPowerups}
                                 />
-                                <div style={styles.lineaBranding}>
+                                <div style={styles.monadBranding}>
                                     <div style={{
                                         fontSize: '11px',
                                         color: 'rgba(255,255,255,0.5)',
@@ -543,7 +543,6 @@ const GameStateManager: React.FC = () => {
                                         marginBottom: '8px',
                                         letterSpacing: '0.5px',
                                     }}>
-                                        v{process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'}
                                     </div>
                                     <div style={{
                                         fontSize: '10px',
