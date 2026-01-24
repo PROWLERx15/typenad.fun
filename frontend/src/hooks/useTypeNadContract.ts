@@ -190,6 +190,7 @@ export function useTypeNadContract() {
       misses: bigint,
       typos: bigint,
       bonusAmount: bigint,
+      player: `0x${string}`,
       signature: `0x${string}`
     ): Promise<{ hash: `0x${string}`; payout: bigint }> => {
       setIsLoading(true);
@@ -201,7 +202,7 @@ export function useTypeNadContract() {
           address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
           abi: TYPE_NAD_ABI,
           functionName: 'settleGame',
-          args: [sequenceNumber, misses, typos, bonusAmount, signature],
+          args: [sequenceNumber, misses, typos, bonusAmount, player, signature],
           chain: monadTestnet,
           account: address as `0x${string}`,
         });

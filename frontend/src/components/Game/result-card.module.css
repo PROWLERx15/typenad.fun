@@ -1,0 +1,664 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   RESULT CARD - STAKED GAME OVER SCREEN
+   Inspired by WalletWidget glass card design
+   Monad Purple / Dark Theme / Neon Glow
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   OVERLAY - Full screen with background
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image: url('/images/gameover.png');
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   RESULT CARD - Main container with glass effect
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.resultCard {
+  background: linear-gradient(180deg, rgba(10, 10, 26, 0.98) 0%, rgba(5, 5, 15, 0.98) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 12px;
+  padding: 32px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow:
+    0 0 40px rgba(139, 92, 246, 0.3),
+    0 0 80px rgba(139, 92, 246, 0.15),
+    inset 0 0 60px rgba(139, 92, 246, 0.08);
+  animation: slideIn 0.4s ease-out;
+  backdrop-filter: blur(10px);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .resultCard {
+    padding: 24px;
+    max-width: 100%;
+    border-radius: 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   HEADER
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.gameOverTitle {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(24px, 5vw, 36px);
+  color: #8B5CF6;
+  margin: 0 0 12px 0;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-shadow: 
+    0 0 10px rgba(139, 92, 246, 0.8),
+    0 0 30px rgba(139, 92, 246, 0.5),
+    0 0 60px rgba(139, 92, 246, 0.3);
+  animation: neonPulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes neonPulse {
+  from {
+    text-shadow: 
+      0 0 10px rgba(139, 92, 246, 0.8),
+      0 0 30px rgba(139, 92, 246, 0.5),
+      0 0 60px rgba(139, 92, 246, 0.3);
+  }
+  to {
+    text-shadow: 
+      0 0 15px rgba(139, 92, 246, 1),
+      0 0 40px rgba(139, 92, 246, 0.7),
+      0 0 80px rgba(139, 92, 246, 0.4);
+  }
+}
+
+.playerSummary {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: rgba(139, 92, 246, 0.7);
+  margin: 0;
+  letter-spacing: 1px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CARD BODY
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section {
+  padding: 20px;
+  background: rgba(139, 92, 246, 0.05);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 8px;
+}
+
+.sectionTitle {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: #A78BFA;
+  margin: 0 0 16px 0;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PAYOUT DETAILS SECTION
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.payoutDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.payoutRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: #A78BFA;
+}
+
+.payoutLabel {
+  color: rgba(139, 92, 246, 0.7);
+}
+
+.payoutValue {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.payoutRow.bonus .payoutValue {
+  color: #00FF88;
+}
+
+.payoutRow.penalty .payoutValue {
+  color: #FF4444;
+}
+
+.divider {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.3), transparent);
+  margin: 8px 0;
+}
+
+.payoutRow.finalPayout {
+  margin-top: 8px;
+  padding-top: 12px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.finalPayoutValue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profit {
+  color: #00FF88;
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+}
+
+.loss {
+  color: #FF4444;
+  text-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+}
+
+.copyButton {
+  background: none;
+  border: none;
+  color: rgba(139, 92, 246, 0.6);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+}
+
+.copyButton:hover {
+  color: #A78BFA;
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.loadingSpinner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #8B5CF6;
+}
+
+.spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Warning and info boxes */
+.warningBox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+.warningIcon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.warningText {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #FF4444;
+  line-height: 1.4;
+}
+
+.noStakeMessage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  background: rgba(139, 92, 246, 0.05);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: rgba(139, 92, 246, 0.7);
+}
+
+.infoIcon {
+  font-size: 18px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   STATS GRID
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 480px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 6px;
+}
+
+.statLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: rgba(139, 92, 246, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.statValue {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 18px;
+  color: #A78BFA;
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TRANSACTION SECTION
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.statusMessage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #8B5CF6;
+  padding: 12px;
+  background: rgba(139, 92, 246, 0.08);
+  border-radius: 6px;
+}
+
+.txLinkContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.txLink {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #8B5CF6;
+  text-decoration: none;
+  padding: 12px 16px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.txLink:hover {
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.4);
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+}
+
+.txHash {
+  letter-spacing: 0.5px;
+}
+
+.externalIcon {
+  font-size: 14px;
+  margin-left: 8px;
+}
+
+.txCopyButton {
+  background: none;
+  border: none;
+  color: rgba(139, 92, 246, 0.6);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+}
+
+.txCopyButton:hover {
+  color: #A78BFA;
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.copiedFeedback {
+  position: absolute;
+  right: -60px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #00FF88;
+  animation: fadeInOut 2s ease-out;
+}
+
+@keyframes fadeInOut {
+  0%, 100% {
+    opacity: 0;
+  }
+  10%, 90% {
+    opacity: 1;
+  }
+}
+
+/* Error box */
+.errorBox {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  border-radius: 6px;
+}
+
+.errorIcon {
+  font-size: 18px;
+}
+
+.errorText {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #FF4444;
+  line-height: 1.5;
+}
+
+.retryButton {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: #FFFFFF;
+  background: #8B5CF6;
+  border: 1px solid rgba(139, 92, 246, 0.6);
+  border-radius: 6px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 1px;
+  align-self: flex-start;
+}
+
+.retryButton:hover {
+  background: #A78BFA;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ACTION BUTTONS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+@media (max-width: 480px) {
+  .actions {
+    flex-direction: column;
+  }
+}
+
+.primaryButton {
+  flex: 1;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: #FFFFFF;
+  background: #8B5CF6;
+  border: 1px solid rgba(139, 92, 246, 0.6);
+  border-radius: 8px;
+  padding: 14px 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+}
+
+.primaryButton:hover {
+  background: #A78BFA;
+  box-shadow: 
+    0 0 30px rgba(139, 92, 246, 0.5),
+    inset 0 0 20px rgba(139, 92, 246, 0.2);
+}
+
+.secondaryButton {
+  flex: 1;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: #8B5CF6;
+  background: transparent;
+  border: 2px solid rgba(139, 92, 246, 0.5);
+  border-radius: 8px;
+  padding: 14px 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.secondaryButton:hover {
+  color: #A78BFA;
+  border-color: rgba(139, 92, 246, 0.8);
+  background: rgba(139, 92, 246, 0.1);
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.footer {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(139, 92, 246, 0.2);
+  text-align: center;
+}
+
+.footerText {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: rgba(139, 92, 246, 0.5);
+  letter-spacing: 0.5px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SCROLLBAR STYLING
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.resultCard::-webkit-scrollbar {
+  width: 8px;
+}
+
+.resultCard::-webkit-scrollbar-track {
+  background: rgba(139, 92, 246, 0.05);
+  border-radius: 4px;
+}
+
+.resultCard::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.3);
+  border-radius: 4px;
+}
+
+.resultCard::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.5);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DUEL-SPECIFIC STYLES
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.duelComparisonGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 480px) {
+  .duelComparisonGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.comparisonBox {
+  padding: 16px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+
+.comparisonBox.winner {
+  background: rgba(0, 255, 136, 0.12);
+  border-color: rgba(0, 255, 136, 0.3);
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+}
+
+.playerLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: rgba(139, 92, 246, 0.7);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.comparisonStat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.comparisonValue {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 18px;
+  color: #A78BFA;
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+.comparisonLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: rgba(139, 92, 246, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.waitingPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  color: rgba(139, 92, 246, 0.6);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
+.potInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.potRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: #A78BFA;
+}
+
+.potLabel {
+  color: rgba(139, 92, 246, 0.7);
+}
+
+.potValue {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.potSubtext {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: rgba(139, 92, 246, 0.5);
+  line-height: 1.4;
+}
+

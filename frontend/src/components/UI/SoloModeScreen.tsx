@@ -241,7 +241,7 @@ const SoloModeScreen: React.FC<SoloModeScreenProps> = ({
                             className={styles.modeButton}
                             disabled={!isConnected}
                         >
-                            {isConnected ? 'Play for USDC' : 'Connect Wallet'}
+                            {isConnected ? 'Start Staked Mode' : 'Connect Wallet'}
                         </button>
                     </div>
                 </div>

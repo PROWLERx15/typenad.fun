@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { usePrivyWallet } from '../../hooks/usePrivyWallet';
-import { formatUSDC } from '../../hooks/useUSDC';
-import { styles as gameOverStyles } from './GameOver.styles';
+import ResultCard from './ResultCard';
 
 interface StakedGameOverProps {
   score: number;
@@ -107,12 +106,11 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
 
   // Estimate payout (frontend estimation for display)
   const estimatePayout = () => {
-    const FREE_MISSES = BigInt(10);
-    const PENALTY_AMOUNT = BigInt(100_000); // 0.1 USDC
     const PLATFORM_FEE_BPS = BigInt(1000); // 10%
 
     const penalizedMisses = BigInt(missCount) > FREE_MISSES ? BigInt(missCount) - FREE_MISSES : BigInt(0);
-    const totalPenalty = penalizedMisses * PENALTY_AMOUNT;
+    const penalizedTypos = BigInt(typoCount) > FREE_TYPOS ? BigInt(typoCount) - FREE_TYPOS : BigInt(0);
+    const totalPenalty = (penalizedMisses * PENALTY_AMOUNT) + (penalizedTypos * PENALTY_AMOUNT);
     const grossPayout = stakeAmount + bonusAmount > totalPenalty ? stakeAmount + bonusAmount - totalPenalty : BigInt(0);
     const platformFee = (grossPayout * PLATFORM_FEE_BPS) / BigInt(10000);
     const netPayout = grossPayout - platformFee;
@@ -144,12 +142,28 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
 
       if (!response.ok) {
         const data = await response.json();
+        // Check if it's a SessionNotActive error (already settled)
+        if (data.error?.includes('SessionNotActive') || data.alreadySettled) {
+          // Game was already settled, try to fetch the result
+          const statusResponse = await fetch(`/api/game-settlement-status?sequenceNumber=${sequenceNumber.toString()}`);
+          const statusData = await statusResponse.json();
+          if (statusData.status === 'settled') {
+            setPayout(BigInt(statusData.payout || '0'));
+            setTxHash(statusData.txHash || '');
+            setStatus('settled');
+            return;
+          }
+        }
         throw new Error(data.error || 'Failed to trigger settlement');
       }
 
       const result = await response.json();
 
       if (result.success) {
+        // Check if it was already settled
+        if (result.alreadySettled) {
+          console.log('[StakedGameOver] Game was already settled');
+        }
         // Settlement executed successfully
         setPayout(BigInt(result.payout || '0'));
         setTxHash(result.txHash || '');
@@ -160,7 +174,14 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
 
     } catch (err: unknown) {
       console.error('[StakedGameOver] Settlement trigger failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to trigger settlement');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to trigger settlement';
+
+      // If it's a SessionNotActive error, the game is already settled
+      if (errorMessage.includes('SessionNotActive')) {
+        setError('Game already settled - payout was sent!');
+      } else {
+        setError(errorMessage);
+      }
       setStatus('error');
     }
   };
@@ -178,18 +199,20 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
         }
 
         const data = await response.json();
-        
+
         if (data.status === 'settled') {
           // Settlement complete!
           clearInterval(pollInterval);
           setPayout(BigInt(data.payout || '0'));
           setTxHash(data.txHash || '');
           setStatus('settled');
-        } else if (data.status === 'error') {
+        } else if (data.status === 'error' && data.error && !data.error.includes('Could not verify on-chain status')) {
+          // Only set error for definitive errors, not RPC timeouts
           clearInterval(pollInterval);
           setError(data.error || 'Settlement failed');
           setStatus('error');
         }
+        // For 'pending' or RPC errors, keep polling
       } catch (err) {
         console.error('[StakedGameOver] Error polling settlement status:', err);
       }
@@ -221,120 +244,37 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
     triggerBackendSettlement();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const estimatedPayout = estimatePayout();
-  const isProfit = estimatedPayout > stakeAmount;
+  // Calculate penalties for display
+  const penalizedMisses = BigInt(missCount) > FREE_MISSES ? BigInt(missCount) - FREE_MISSES : BigInt(0);
+  const penalizedTypos = BigInt(typoCount) > FREE_TYPOS ? BigInt(typoCount) - FREE_TYPOS : BigInt(0);
+  const missDeduction = penalizedMisses * PENALTY_AMOUNT;
+  const typoDeduction = penalizedTypos * PENALTY_AMOUNT;
+  const totalSlashed = missDeduction + typoDeduction;
+
+  // Determine profit/loss: use actual payout if settled, otherwise estimate
+  const actualOrEstimatedPayout = status === 'settled' && payout !== null ? payout : estimatePayout();
+  const isProfit = actualOrEstimatedPayout > stakeAmount;
 
   return (
-    <>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');`}</style>
-      <div style={gameOverStyles.container}>
-        <h1 style={gameOverStyles.title}>
-          {status === 'settled' ? (isProfit ? '🎉 Victory!' : '💀 Game Over') : 'Settling Game...'}
-        </h1>
-
-        {/* Game Stats */}
-        <div style={{ marginBottom: '20px' }}>
-          <p style={gameOverStyles.statText}>Score: {score}</p>
-          <p style={gameOverStyles.statText}>WPM: {wpm}</p>
-          <p style={gameOverStyles.statText}>Misses: {missCount}</p>
-          <p style={gameOverStyles.statText}>Typos: {typoCount}</p>
-        </div>
-
-        {/* Staking Info */}
-        <div
-          style={{
-            padding: '16px',
-            backgroundColor: 'rgba(139, 92, 246, 0.1)',
-            borderRadius: '8px',
-            marginBottom: '20px',
-          }}
-        >
-          <p style={{ ...gameOverStyles.statText, fontSize: '12px', color: '#888' }}>
-            Staked: {formatUSDC(stakeAmount)} USDC
-          </p>
-          <p style={{ ...gameOverStyles.statText, fontSize: '12px', color: '#888' }}>
-            Bonus (WPM): +{formatUSDC(bonusAmount)} USDC
-          </p>
-          {missCount > 10 && (
-            <p style={{ ...gameOverStyles.statText, fontSize: '12px', color: '#ef4444' }}>
-              Penalties ({missCount - 10} misses): -{formatUSDC(BigInt((missCount - 10) * 100_000))} USDC
-            </p>
-          )}
-        </div>
-
-        {/* Settlement Status */}
-        {status === 'settling' && (
-          <p style={{ color: '#8B5CF6', fontSize: '12px', marginBottom: '16px' }}>
-            Settlement in progress (no approval needed)...
-          </p>
-        )}
-
-        {status === 'settled' && (
-          <>
-            <p
-              style={{
-                color: isProfit ? '#22c55e' : '#ef4444',
-                fontSize: '16px',
-                marginBottom: '16px',
-                fontWeight: 'bold',
-              }}
-            >
-              Payout: {formatUSDC(payout || BigInt(0))} USDC
-            </p>
-            {txHash && (
-              <a
-                href={`https://testnet.monadexplorer.com/tx/${txHash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: '#8B5CF6', fontSize: '10px', textDecoration: 'underline' }}
-              >
-                View Transaction ↗
-              </a>
-            )}
-          </>
-        )}
-
-        {status === 'error' && (
-          <div style={{ marginBottom: '16px' }}>
-            <p style={{ color: '#ef4444', fontSize: '12px', marginBottom: '8px' }}>{error}</p>
-            <button
-              onClick={handleRetrySettlement}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#8B5CF6',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '10px',
-                fontFamily: '"Press Start 2P", monospace',
-              }}
-            >
-              Retry Settlement
-            </button>
-          </div>
-        )}
-
-        {/* Actions */}
-        {(status === 'settled' || status === 'error') && (
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
-            <button onClick={onRestart} style={gameOverStyles.button}>
-              Play Again
-            </button>
-            <button
-              onClick={onBackToMenu}
-              style={{
-                ...gameOverStyles.button,
-                backgroundColor: 'transparent',
-                border: '2px solid #8B5CF6',
-              }}
-            >
-              Back to Menu
-            </button>
-          </div>
-        )}
-      </div>
-    </>
+    <ResultCard
+      score={score}
+      wpm={wpm}
+      missCount={missCount}
+      typoCount={typoCount}
+      stakeAmount={stakeAmount}
+      bonusAmount={bonusAmount}
+      missDeduction={missDeduction}
+      typoDeduction={typoDeduction}
+      totalSlashed={totalSlashed}
+      finalPayout={payout}
+      txHash={txHash}
+      status={status}
+      error={error}
+      isProfit={isProfit}
+      onRestart={onRestart}
+      onBackToMenu={onBackToMenu}
+      onRetrySettle={handleRetrySettlement}
+    />
   );
 };
 

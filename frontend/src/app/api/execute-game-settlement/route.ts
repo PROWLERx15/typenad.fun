@@ -10,7 +10,7 @@ import { TYPE_NAD_ABI, TYPE_NAD_CONTRACT_ADDRESS } from '../../../contracts/cont
 async function checkOnChainSettlement(sequenceNumber: bigint) {
   try {
     const publicClient = getVerifierPublicClient();
-    
+
     // Check if session is still active
     const sessionState = await publicClient.readContract({
       address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
@@ -58,7 +58,7 @@ async function checkOnChainSettlement(sequenceNumber: bigint) {
  */
 function isTemporaryError(error: any): boolean {
   const errorMessage = error.message || JSON.stringify(error);
-  
+
   const temporaryPatterns = [
     'network',
     'timeout',
@@ -69,7 +69,7 @@ function isTemporaryError(error: any): boolean {
     'nonce',
   ];
 
-  return temporaryPatterns.some(pattern => 
+  return temporaryPatterns.some(pattern =>
     errorMessage.toLowerCase().includes(pattern.toLowerCase())
   );
 }
@@ -150,14 +150,30 @@ async function executeSettlementWithRetry(
         message: { raw: messageHash },
       });
 
-      console.log('[GameSettlement] Signature generated', {
+      // Get contract verifier to compare
+      const publicClient = getVerifierPublicClient();
+      const contractVerifier = await publicClient.readContract({
+        address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
+        abi: TYPE_NAD_ABI,
+        functionName: 'verifier',
+      }) as `0x${string}`;
+
+      console.log('[GameSettlement] Signature details', {
         sequenceNumber: sequenceNumber.toString(),
         signerAddress: account.address,
+        contractVerifier,
+        addressesMatch: account.address.toLowerCase() === contractVerifier.toLowerCase(),
+        messageHash,
+        signatureLength: signature.length,
       });
+
+      if (account.address.toLowerCase() !== contractVerifier.toLowerCase()) {
+        throw new Error(`Signer address mismatch: signer=${account.address}, contract verifier=${contractVerifier}`);
+      }
 
       // Execute settlement transaction
       const walletClient = getVerifierWalletClient();
-      const publicClient = getVerifierPublicClient();
+      // publicClient already defined above for verifier check
 
       console.log('[GameSettlement] Submitting transaction', {
         sequenceNumber: sequenceNumber.toString(),
@@ -168,7 +184,7 @@ async function executeSettlementWithRetry(
         address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
         abi: TYPE_NAD_ABI,
         functionName: 'settleGame',
-        args: [sequenceNumber, BigInt(misses), BigInt(typos), bonusAmount, signature],
+        args: [sequenceNumber, BigInt(misses), BigInt(typos), bonusAmount, playerAddress as `0x${string}`, signature],
       });
 
       console.log('[GameSettlement] Transaction submitted', {
@@ -241,7 +257,7 @@ async function executeSettlementWithRetry(
         console.log('[GameSettlement] Race condition detected, fetching existing result', {
           sequenceNumber: sequenceNumber.toString(),
         });
-        
+
         const onChainStatus = await checkOnChainSettlement(sequenceNumber);
         if (onChainStatus.settled) {
           return {
@@ -324,20 +340,25 @@ export async function POST(request: NextRequest) {
     const sequenceNumberBigInt = BigInt(sequenceNumber);
     const bonusAmountBigInt = BigInt(bonusAmount || '0');
 
+    // Apply free typo limit (7 free typos before penalties)
+    const FREE_TYPOS = 7;
+    const penalizedTypos = Math.max(0, typos - FREE_TYPOS);
+
     console.log('[execute-game-settlement] Received request', {
       sequenceNumber,
       misses,
       typos,
+      penalizedTypos,
       bonusAmount: bonusAmount || '0',
       playerAddress,
       timestamp: new Date().toISOString(),
     });
 
-    // Execute settlement with retry logic
+    // Execute settlement with retry logic (pass penalizedTypos to contract)
     const result = await executeSettlementWithRetry(
       sequenceNumberBigInt,
       misses,
-      typos,
+      penalizedTypos,
       bonusAmountBigInt,
       playerAddress
     );
@@ -347,8 +368,8 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('[execute-game-settlement] Error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: error.message || 'Internal server error',
         temporary: isTemporaryError(error),
       },
