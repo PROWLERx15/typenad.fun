@@ -212,22 +212,11 @@ const SoloModeScreen: React.FC<SoloModeScreenProps> = ({
                             Unlock achievements!
                         </p>
                         <button onClick={onStory} className={styles.modeButton}>
-                            Start Story
+                            Start
                         </button>
                     </div>
 
-                    <div className={styles.modeCard}>
-                        <h2 className={styles.modeTitle}>Survival</h2>
-                        <p className={styles.modeDescription}>
-                            Endless enemy waves.<br />
-                            How long can you last?
-                        </p>
-                        <button onClick={onSurvival} className={styles.modeButton}>
-                            Start Survival
-                        </button>
-                    </div>
-
-                    <div className={styles.modeCard}>
+                    <div className={`${styles.modeCard} ${styles.stakedCard}`}>
                         <h2 className={styles.modeTitle}>
                             Staked Mode
                         </h2>
@@ -241,7 +230,18 @@ const SoloModeScreen: React.FC<SoloModeScreenProps> = ({
                             className={styles.modeButton}
                             disabled={!isConnected}
                         >
-                            {isConnected ? 'Start Staked Mode' : 'Connect Wallet'}
+                            {isConnected ? 'Start' : 'Connect Wallet'}
+                        </button>
+                    </div>
+
+                    <div className={styles.modeCard}>
+                        <h2 className={styles.modeTitle}>Survival</h2>
+                        <p className={styles.modeDescription}>
+                            Endless enemy waves.<br />
+                            How long can you last?
+                        </p>
+                        <button onClick={onSurvival} className={styles.modeButton}>
+                            Start
                         </button>
                     </div>
                 </div>
