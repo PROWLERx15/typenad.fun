@@ -14,7 +14,8 @@ interface LeaderboardScreenProps {
 const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onClose, myChainId }) => {
     const [scores, setScores] = React.useState<any[]>([]);
     const [loading, setLoading] = React.useState(true);
-    const [timeRange, setTimeRange] = React.useState<'all' | 'today' | 'week'>('all');
+    const [timeRange, setTimeRange] = React.useState<'all' | 'today' | 'week' | 'month'>('all');
+    const [category, setCategory] = React.useState<'best_score' | 'best_wpm' | 'total_kills' | 'duel_wins'>('best_score');
 
     const myWalletAddress = typeof window !== 'undefined'
         ? localStorage.getItem('wallet_address') || undefined
@@ -24,47 +25,31 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onClose, myChainI
         const fetchScores = async () => {
             setLoading(true);
             try {
-                // Fetch top 50 scores
-                let query = supabase
-                    .from('game_scores')
-                    .select(`
-                        score, 
-                        wpm, 
-                        users (
-                            username,
-                            wallet_address
-                        )
-                    `)
-                    .order('score', { ascending: false })
-                    .limit(50);
+                // Use enhanced leaderboard API
+                const response = await fetch(
+                    `/api/leaderboard?category=${category}&timeRange=${timeRange}&limit=50`
+                );
+                
+                const data = await response.json();
 
-                if (timeRange === 'today') {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    query = query.gte('created_at', today.toISOString());
-                } else if (timeRange === 'week') {
-                    const weekAgo = new Date();
-                    weekAgo.setDate(weekAgo.getDate() - 7);
-                    query = query.gte('created_at', weekAgo.toISOString());
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Failed to fetch leaderboard');
                 }
 
-                const { data, error } = await query;
-
-                if (error) throw error;
-
-                if (data) {
-                    const formattedScores = data.map((entry: any) => ({
-                        chainId: entry.users?.wallet_address || 'Unknown',
-                        score: entry.score,
-                        wpm: entry.wpm,
-                        displayName: entry.users?.username || `Pilot ${entry.users?.wallet_address?.slice(0, 6)}`,
+                if (data.data?.leaderboard) {
+                    const formattedScores = data.data.leaderboard.map((entry: any) => ({
+                        chainId: entry.walletAddress || 'Unknown',
+                        score: entry.value,
+                        wpm: entry.bestWpm || 0,
+                        displayName: entry.username || `Pilot ${entry.walletAddress?.slice(0, 6)}`,
+                        rank: entry.rank,
                     }));
                     setScores(formattedScores);
                 }
             } catch (err) {
                 console.error('Error fetching leaderboard:', err);
 
-                // Fallback to local storage if API fails or no data
+                // Fallback to local storage if API fails
                 const localScore = typeof window !== 'undefined'
                     ? parseInt(localStorage.getItem('personal_best_score') || '0')
                     : 0;
@@ -75,6 +60,7 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onClose, myChainI
                         score: localScore,
                         wpm: typeof window !== 'undefined' ? parseInt(localStorage.getItem('personal_best_wpm') || '0') : 0,
                         displayName: typeof window !== 'undefined' ? localStorage.getItem('display_name') : 'You',
+                        rank: 1,
                     }]);
                 }
             } finally {
@@ -83,7 +69,7 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onClose, myChainI
         };
 
         fetchScores();
-    }, [myWalletAddress, timeRange]);
+    }, [myWalletAddress, timeRange, category]);
 
     React.useEffect(() => {
         const handleEscape = (event: KeyboardEvent) => {
@@ -113,6 +99,61 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onClose, myChainI
             </button>
 
             <div style={styles.contentContainer}>
+                {/* Category Selector */}
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    marginBottom: '15px',
+                    flexWrap: 'wrap'
+                }}>
+                    <button
+                        onClick={() => setCategory('best_score')}
+                        style={{
+                            ...BUTTON_STYLES.small,
+                            opacity: category === 'best_score' ? 1 : 0.5,
+                            fontSize: '11px',
+                            padding: '8px 12px'
+                        }}
+                    >
+                        Score
+                    </button>
+                    <button
+                        onClick={() => setCategory('best_wpm')}
+                        style={{
+                            ...BUTTON_STYLES.small,
+                            opacity: category === 'best_wpm' ? 1 : 0.5,
+                            fontSize: '11px',
+                            padding: '8px 12px'
+                        }}
+                    >
+                        WPM
+                    </button>
+                    <button
+                        onClick={() => setCategory('total_kills')}
+                        style={{
+                            ...BUTTON_STYLES.small,
+                            opacity: category === 'total_kills' ? 1 : 0.5,
+                            fontSize: '11px',
+                            padding: '8px 12px'
+                        }}
+                    >
+                        Kills
+                    </button>
+                    <button
+                        onClick={() => setCategory('duel_wins')}
+                        style={{
+                            ...BUTTON_STYLES.small,
+                            opacity: category === 'duel_wins' ? 1 : 0.5,
+                            fontSize: '11px',
+                            padding: '8px 12px'
+                        }}
+                    >
+                        Duel Wins
+                    </button>
+                </div>
+
+                {/* Time Range Selector */}
                 <div style={{
                     display: 'flex',
                     justifyContent: 'center',
@@ -124,18 +165,29 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onClose, myChainI
                         style={{
                             ...BUTTON_STYLES.small,
                             opacity: timeRange === 'all' ? 1 : 0.5,
-                            fontSize: '12px',
+                            fontSize: '11px',
                             padding: '8px 12px'
                         }}
                     >
                         All Time
                     </button>
                     <button
+                        onClick={() => setTimeRange('month')}
+                        style={{
+                            ...BUTTON_STYLES.small,
+                            opacity: timeRange === 'month' ? 1 : 0.5,
+                            fontSize: '11px',
+                            padding: '8px 12px'
+                        }}
+                    >
+                        Monthly
+                    </button>
+                    <button
                         onClick={() => setTimeRange('week')}
                         style={{
                             ...BUTTON_STYLES.small,
                             opacity: timeRange === 'week' ? 1 : 0.5,
-                            fontSize: '12px',
+                            fontSize: '11px',
                             padding: '8px 12px'
                         }}
                     >
@@ -146,7 +198,7 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onClose, myChainI
                         style={{
                             ...BUTTON_STYLES.small,
                             opacity: timeRange === 'today' ? 1 : 0.5,
-                            fontSize: '12px',
+                            fontSize: '11px',
                             padding: '8px 12px'
                         }}
                     >

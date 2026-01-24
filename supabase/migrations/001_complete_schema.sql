@@ -133,12 +133,17 @@ BEGIN
         ALTER TABLE public.game_scores ADD COLUMN is_staked BOOLEAN DEFAULT FALSE;
     EXCEPTION WHEN duplicate_column THEN END;
 
+
     BEGIN
         ALTER TABLE public.game_scores ADD COLUMN stake_amount BIGINT;
     EXCEPTION WHEN duplicate_column THEN END;
 
     BEGIN
         ALTER TABLE public.game_scores ADD COLUMN payout_amount BIGINT;
+    EXCEPTION WHEN duplicate_column THEN END;
+
+    BEGIN
+        ALTER TABLE public.game_scores ADD COLUMN words_typed INTEGER DEFAULT 0;
     EXCEPTION WHEN duplicate_column THEN END;
 END $$;
 

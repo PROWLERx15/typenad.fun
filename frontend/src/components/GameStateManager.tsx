@@ -6,6 +6,7 @@ import { usePrivyWallet } from '../hooks/usePrivyWallet';
 import { useAuthSync } from '../hooks/useAuthSync';
 import { useGoldBalance } from '../hooks/useGoldBalance';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { useAchievementNotifications } from '../hooks/useAchievementNotifications';
 import { DebugPanel } from './DebugPanel';
 import GameCanvas from './Game/GameCanvas';
 import SoundManager from './Game/SoundManager';
@@ -21,6 +22,9 @@ import LeaderboardScreen from './UI/LeaderboardScreen';
 import CryptScreen from './UI/CryptScreen';
 import ShopScreen from './UI/ShopScreen';
 import SettingsScreen from './UI/SettingsScreen';
+import ProfileScreen from './UI/ProfileScreen';
+import AchievementsScreen from './UI/AchievementsScreen';
+import AchievementNotification from './UI/AchievementNotification';
 import MigrationPrompt from './UI/MigrationPrompt';
 import { BACKGROUND_STYLES } from '../styles/theme';
 import { styles } from './GameStateManager.styles';
@@ -34,8 +38,9 @@ const GameStateManager: React.FC = () => {
     const { address, isConnected, walletError, clearWalletError, logout } = usePrivyWallet();
     const { syncing, synced, error: syncError } = useAuthSync();
     const { gold, updateGold, addGold } = useGoldBalance();
+    const { notifications, addNotification, removeNotification } = useAchievementNotifications();
 
-    const [gameState, setGameState] = useState<'start' | 'playing' | 'gameOver' | 'pvp' | 'solo' | 'multiplayer' | 'leaderboard' | 'shop' | 'crypt' | 'settings'>('start');
+    const [gameState, setGameState] = useState<'start' | 'playing' | 'gameOver' | 'pvp' | 'solo' | 'multiplayer' | 'leaderboard' | 'shop' | 'crypt' | 'settings' | 'achievements' | 'profile'>('start');
     const [showOnboardingOverlay, setShowOnboardingOverlay] = useState(false);
     const [showMigrationPrompt, setShowMigrationPrompt] = useState(false);
     const [score, setScore] = useState(0);
@@ -65,6 +70,12 @@ const GameStateManager: React.FC = () => {
     const [missCount, setMissCount] = useState<number>(0);
     const [typoCount, setTypoCount] = useState<number>(0);
 
+    // NEW: Additional game metrics
+    const [kills, setKills] = useState<number>(0);
+    const [waveReached, setWaveReached] = useState<number>(1);
+    const [duration, setDuration] = useState<number>(0);
+    const [wordsTyped, setWordsTyped] = useState<number>(0);
+
     // Get high score from localStorage
     const highScore = typeof window !== 'undefined'
         ? parseInt(localStorage.getItem('personal_best_score') || '0')
@@ -77,6 +88,13 @@ const GameStateManager: React.FC = () => {
         setGameMode(mode);
         setIsPVPGame(mode === 'pvp');
         setFriendChainId(friendId || '');
+
+        // Reset game tracking refs
+        gameStartTimeRef.current = Date.now();
+        killsRef.current = 0;
+        wordsTypedRef.current = 0;
+        waveRef.current = 1;
+        durationRef.current = 0;
 
         // Get equipped powerups and consume them
         const equipped = getEquippedPowerups();
@@ -124,6 +142,13 @@ const GameStateManager: React.FC = () => {
         setScore(0);
         setBestWpm(0);
         setGoldEarned(0);
+
+        // Reset game tracking refs
+        gameStartTimeRef.current = Date.now();
+        killsRef.current = 0;
+        wordsTypedRef.current = 0;
+        waveRef.current = 1;
+        durationRef.current = 0;
     };
 
     // Handler for starting a duel from PVPModeScreen
@@ -141,14 +166,32 @@ const GameStateManager: React.FC = () => {
         setScore(0);
         setBestWpm(0);
         setGoldEarned(0);
+
+        // Reset game tracking refs
+        gameStartTimeRef.current = Date.now();
+        killsRef.current = 0;
+        wordsTypedRef.current = 0;
+        waveRef.current = 1;
+        durationRef.current = 0;
     };
 
     // Track kills for game stats
     const killsRef = useRef<number>(0);
     const wordsTypedRef = useRef<number>(0);
     const waveRef = useRef<number>(1);
+    const durationRef = useRef<number>(0);
+    const gameStartTimeRef = useRef<number>(Date.now());
 
     const handleGameOver = async () => {
+        // Calculate duration
+        durationRef.current = Math.floor((Date.now() - gameStartTimeRef.current) / 1000);
+
+        // Capture final metrics before state change
+        setKills(killsRef.current);
+        setWordsTyped(wordsTypedRef.current);
+        setWaveReached(waveRef.current);
+        setDuration(durationRef.current);
+
         setGameState('gameOver');
 
         // Record game stats with wallet address for database sync
@@ -169,6 +212,7 @@ const GameStateManager: React.FC = () => {
         killsRef.current = 0;
         wordsTypedRef.current = 0;
         waveRef.current = 1;
+        durationRef.current = 0;
         setSelectedPowerups([]);
 
         // Save to Supabase (individual score record)
@@ -298,6 +342,39 @@ const GameStateManager: React.FC = () => {
     const handleShop = () => setGameState('shop');
     const handleCrypt = () => setGameState('crypt');
     const handleSettings = () => setGameState('settings');
+    const handleAchievements = () => setGameState('achievements');
+    const handleProfile = () => setGameState('profile');
+
+    // Check for new achievements after game over
+    const checkAchievements = async () => {
+        if (!address) return;
+
+        try {
+            const response = await fetch('/api/achievements/check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ walletAddress: address }),
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.data?.newAchievements?.length > 0) {
+                console.log('[GameStateManager] New achievements unlocked:', data.data.newAchievements);
+                
+                // Add notifications for each new achievement
+                data.data.newAchievements.forEach((achievement: any) => {
+                    addNotification(achievement);
+                });
+
+                // Update gold balance
+                if (data.data.totalGoldAwarded > 0) {
+                    addGold(data.data.totalGoldAwarded);
+                }
+            }
+        } catch (error) {
+            console.error('[GameStateManager] Failed to check achievements:', error);
+        }
+    };
 
     const handleOnboardingStart = () => {
         localStorage.setItem('seenOnboarding', 'true');
@@ -528,6 +605,8 @@ const GameStateManager: React.FC = () => {
                                     onShop={handleShop}
                                     onCrypt={handleCrypt}
                                     onSettings={handleSettings}
+                                    onAchievements={handleAchievements}
+                                    onProfile={handleProfile}
                                     disabled={!isConnected}
                                     statusText={statusTextToDisplay}
                                     chainId={address || ''}
@@ -535,7 +614,7 @@ const GameStateManager: React.FC = () => {
                                     selectedPowerups={selectedPowerups}
                                     onPowerupsChange={setSelectedPowerups}
                                 />
-                                <div style={styles.lineaBranding}>
+                                <div style={styles.brandingContainer}>
                                     <div style={{
                                         fontSize: '11px',
                                         color: 'rgba(255,255,255,0.5)',
@@ -579,6 +658,9 @@ const GameStateManager: React.FC = () => {
                             onTypoUpdate={setTypoCount}
                             onReturnToStart={handleReturnToStart}
                             onWaveComplete={async (waveNumber: number) => {
+                                // Update wave ref
+                                waveRef.current = waveNumber;
+
                                 // Save progress locally
                                 const savedHighScore = parseInt(localStorage.getItem('personal_best_score') || '0');
                                 const savedBestWpm = parseInt(localStorage.getItem('personal_best_wpm') || '0');
@@ -592,6 +674,9 @@ const GameStateManager: React.FC = () => {
                             }}
                             onQuestProgress={async (kills: number, batKills: number) => {
                                 console.log('Quest progress:', { kills, batKills });
+                                // Update kills and words typed refs
+                                killsRef.current += kills;
+                                wordsTypedRef.current += kills; // Words typed approximately equals kills
                             }}
                             screenEffect={screenEffect}
                             pvpMode={isPVPGame}
@@ -614,8 +699,14 @@ const GameStateManager: React.FC = () => {
                             typoCount={typoCount}
                             sequenceNumber={stakedSequenceNumber}
                             stakeAmount={stakedAmount}
+                            kills={kills}
+                            waveReached={waveReached}
+                            duration={duration}
+                            wordsTyped={wordsTyped}
+                            goldEarned={goldEarned}
                             onRestart={() => setGameState('solo')}
                             onBackToMenu={handleRestart}
+                            onAchievementsChecked={checkAchievements}
                         />
                     ) : gameMode === 'duel' && duelId ? (
                         <DuelGameOver
@@ -626,8 +717,14 @@ const GameStateManager: React.FC = () => {
                             duelId={duelId}
                             stakeAmount={stakedAmount}
                             isCreator={isDuelCreator}
+                            kills={kills}
+                            waveReached={waveReached}
+                            duration={duration}
+                            wordsTyped={wordsTyped}
+                            goldEarned={goldEarned}
                             onRestart={() => setGameState('pvp')}
                             onBackToMenu={handleRestart}
+                            onAchievementsChecked={checkAchievements}
                         />
                     ) : isPVPGame ? (
                         <div style={styles.pvpGameOverContainer}>
@@ -653,7 +750,19 @@ const GameStateManager: React.FC = () => {
                             </button>
                         </div>
                     ) : (
-                        <GameOver score={score} wpm={bestWpm} goldEarned={goldEarned} onRestart={handleRestart} />
+                        <GameOver
+                            score={score}
+                            wpm={bestWpm}
+                            goldEarned={goldEarned}
+                            kills={kills}
+                            missCount={missCount}
+                            typoCount={typoCount}
+                            waveReached={waveReached}
+                            duration={duration}
+                            wordsTyped={wordsTyped}
+                            onRestart={handleRestart}
+                            onAchievementsChecked={checkAchievements}
+                        />
                     ),
                     pvp: (
                         <div style={styles.pvpScreenContainer()}>
@@ -717,9 +826,31 @@ const GameStateManager: React.FC = () => {
                             }}
                         />
                     ),
+                    achievements: (
+                        <AchievementsScreen
+                            onClose={() => setGameState('start')}
+                            walletAddress={address}
+                        />
+                    ),
+                    profile: (
+                        <ProfileScreen
+                            onClose={() => setGameState('start')}
+                            walletAddress={address}
+                        />
+                    ),
                 };
                 return screens[gameState];
             })()}
+
+            {/* Achievement Notifications */}
+            {notifications.map((notification, index) => (
+                <AchievementNotification
+                    key={notification.id}
+                    achievement={notification}
+                    onDismiss={() => removeNotification(notification.id)}
+                    index={index}
+                />
+            ))}
 
             {/* Debug Panel - only visible when connected */}
             {/* {isConnected && <DebugPanel />} */}

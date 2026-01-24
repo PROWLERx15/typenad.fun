@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
       goldEarned,
       misses,
       typos,
+      duration,
       isStaked,
       stakeAmount,
       payoutAmount,
@@ -110,6 +111,8 @@ export async function POST(request: NextRequest) {
         gold_earned: goldEarned || 0,
         misses: misses || 0,
         typos: typos || 0,
+        duration_seconds: duration || 0,
+        words_typed: wordsTyped || kills || 0,
         is_staked: isStaked || false,
         stake_amount: stakeAmount ? BigInt(stakeAmount).toString() : null,
         payout_amount: payoutAmount ? BigInt(payoutAmount).toString() : null,
@@ -120,6 +123,16 @@ export async function POST(request: NextRequest) {
     if (scoreError) throw scoreError;
 
     console.log(`[score/save] Saved score ${score} for ${walletAddress} (mode: ${gameMode})`);
+
+    // Trigger achievement check asynchronously (don't block response)
+    fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/achievements/check`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ walletAddress }),
+    }).catch((error) => {
+      console.error('[score/save] Achievement check failed:', error);
+      // Don't fail the score save if achievement check fails
+    });
 
     return NextResponse.json({
       success: true,
