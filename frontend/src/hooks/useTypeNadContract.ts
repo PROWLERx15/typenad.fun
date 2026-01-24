@@ -18,6 +18,7 @@ import type {
   Duel,
   GameStartedEvent,
   DuelCreatedEvent,
+  DuelJoinedEvent,
 } from '../types/contract';
 
 // Re-export for convenience
@@ -57,56 +58,6 @@ export function useTypeNadContract() {
 
   // ============= READ FUNCTIONS =============
 
-  // Check if fallback mode is enabled (uses pseudo-random, no entropy fee needed)
-  const isFallbackMode = useCallback(async (): Promise<boolean> => {
-    try {
-      const result = await publicClient.readContract({
-        address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
-        abi: TYPE_NAD_ABI,
-        functionName: 'isFallbackMode',
-      });
-      return result as boolean;
-    } catch {
-      // If we can't check fallback mode, assume it's not enabled
-      return false;
-    }
-  }, [publicClient]);
-
-  const getEntropyFee = useCallback(async (): Promise<bigint> => {
-    // Default fee as fallback (0.001 MON = 10^15 wei) - safe for most cases
-    const DEFAULT_ENTROPY_FEE = BigInt('1000000000000000');
-
-    try {
-      // First check if fallback mode is enabled - if so, no fee needed
-      const fallbackEnabled = await isFallbackMode();
-      if (fallbackEnabled) {
-        console.log('Fallback mode is enabled, no entropy fee needed');
-        return 0n;
-      }
-
-      // Try to get the actual fee from the contract
-      const fee = await publicClient.readContract({
-        address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
-        abi: TYPE_NAD_ABI,
-        functionName: 'getEntropyFee',
-      });
-      const feeValue = fee as bigint;
-
-      // If contract returns 0 but we're not in fallback mode, use default
-      if (feeValue === 0n) {
-        console.log('Contract returned 0 fee but not in fallback mode, using default');
-        return DEFAULT_ENTROPY_FEE;
-      }
-
-      return feeValue;
-    } catch (err) {
-      // If the call fails, use a default fee to be safe
-      // This prevents "Transaction fee too low" errors
-      console.warn('Failed to fetch entropy fee, using default:', err);
-      return DEFAULT_ENTROPY_FEE;
-    }
-  }, [publicClient, isFallbackMode]);
-
   const getUSDCAddress = useCallback(async (): Promise<`0x${string}`> => {
     const usdcAddress = await publicClient.readContract({
       address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
@@ -124,14 +75,13 @@ export function useTypeNadContract() {
         functionName: 'gameSessions',
         args: [sequenceNumber],
       });
-      const [player, stake, randomSeed, active, fulfilled] = result as [
+      const [player, stake, randomSeed, active] = result as [
         `0x${string}`,
         bigint,
         bigint,
-        boolean,
         boolean
       ];
-      return { player, stake, randomSeed, active, fulfilled };
+      return { player, stake, randomSeed, active };
     },
     [publicClient]
   );
@@ -144,16 +94,15 @@ export function useTypeNadContract() {
         functionName: 'duels',
         args: [duelId],
       });
-      const [player1, player2, stake, randomSeed, active, fulfilled] =
+      const [player1, player2, stake, randomSeed, active] =
         result as [
           `0x${string}`,
           `0x${string}`,
           bigint,
           bigint,
-          boolean,
           boolean
         ];
-      return { player1, player2, stake, randomSeed, active, fulfilled };
+      return { player1, player2, stake, randomSeed, active };
     },
     [publicClient]
   );
@@ -185,22 +134,17 @@ export function useTypeNadContract() {
   const startGame = useCallback(
     async (
       stakeAmount: bigint
-    ): Promise<{ hash: `0x${string}`; sequenceNumber: bigint }> => {
+    ): Promise<{ hash: `0x${string}`; sequenceNumber: bigint; seed: bigint }> => {
       setIsLoading(true);
       setError(null);
       try {
         const walletClient = await getWalletClient();
-        const entropyFee = await getEntropyFee();
-
-        // Add 5% buffer to entropy fee
-        const feeWithBuffer = (entropyFee * 105n) / 100n;
 
         const hash = await walletClient.writeContract({
           address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
           abi: TYPE_NAD_ABI,
           functionName: 'startGame',
           args: [stakeAmount],
-          value: feeWithBuffer,
           chain: monadTestnet,
           account: address as `0x${string}`,
         });
@@ -210,6 +154,7 @@ export function useTypeNadContract() {
 
         // Find GameStarted event
         let sequenceNumber: bigint = 0n;
+        let seed: bigint = 0n;
         for (const log of receipt.logs) {
           try {
             const decoded = decodeEventLog({
@@ -220,6 +165,7 @@ export function useTypeNadContract() {
             if (decoded.eventName === 'GameStarted') {
               const args = decoded.args as unknown as GameStartedEvent;
               sequenceNumber = args.sequenceNumber;
+              seed = args.seed;
               break;
             }
           } catch {
@@ -227,7 +173,7 @@ export function useTypeNadContract() {
           }
         }
 
-        return { hash, sequenceNumber };
+        return { hash, sequenceNumber, seed };
       } catch (err) {
         setError(err as Error);
         throw err;
@@ -235,7 +181,7 @@ export function useTypeNadContract() {
         setIsLoading(false);
       }
     },
-    [getWalletClient, getEntropyFee, publicClient, address]
+    [getWalletClient, publicClient, address]
   );
 
   const settleGame = useCallback(
@@ -344,29 +290,43 @@ export function useTypeNadContract() {
   );
 
   const joinDuel = useCallback(
-    async (duelId: bigint): Promise<{ hash: `0x${string}` }> => {
+    async (duelId: bigint): Promise<{ hash: `0x${string}`; seed: bigint }> => {
       setIsLoading(true);
       setError(null);
       try {
         const walletClient = await getWalletClient();
-        const entropyFee = await getEntropyFee();
-
-        // Add 5% buffer
-        const feeWithBuffer = (entropyFee * 105n) / 100n;
 
         const hash = await walletClient.writeContract({
           address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
           abi: TYPE_NAD_ABI,
           functionName: 'joinDuel',
           args: [duelId],
-          value: feeWithBuffer,
           chain: monadTestnet,
           account: address as `0x${string}`,
         });
 
-        await publicClient.waitForTransactionReceipt({ hash });
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
-        return { hash };
+        // Parse seed from DuelJoined event
+        let seed: bigint = 0n;
+        for (const log of receipt.logs) {
+          try {
+            const decoded = decodeEventLog({
+              abi: TYPE_NAD_ABI,
+              data: log.data,
+              topics: log.topics,
+            });
+            if (decoded.eventName === 'DuelJoined') {
+              const args = decoded.args as unknown as DuelJoinedEvent;
+              seed = args.seed;
+              break;
+            }
+          } catch {
+            // Not our event
+          }
+        }
+
+        return { hash, seed };
       } catch (err) {
         setError(err as Error);
         throw err;
@@ -374,7 +334,7 @@ export function useTypeNadContract() {
         setIsLoading(false);
       }
     },
-    [getWalletClient, getEntropyFee, publicClient, address]
+    [getWalletClient, publicClient, address]
   );
 
   const settleDuel = useCallback(
@@ -432,53 +392,6 @@ export function useTypeNadContract() {
 
   // ============= EVENT WATCHERS =============
 
-  const watchGameSeedFulfilled = useCallback(
-    (
-      sequenceNumber: bigint,
-      callback: (seed: bigint) => void
-    ): (() => void) => {
-      const unwatch = publicClient.watchContractEvent({
-        address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
-        abi: TYPE_NAD_ABI,
-        eventName: 'GameSeedFulfilled',
-        args: { sequenceNumber },
-        onLogs: (logs) => {
-          for (const log of logs) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const args = log.args as any;
-            if (args.sequenceNumber === sequenceNumber) {
-              callback(args.seed);
-            }
-          }
-        },
-      });
-      return unwatch;
-    },
-    [publicClient]
-  );
-
-  const watchDuelSeedFulfilled = useCallback(
-    (duelId: bigint, callback: (seed: bigint) => void): (() => void) => {
-      const unwatch = publicClient.watchContractEvent({
-        address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
-        abi: TYPE_NAD_ABI,
-        eventName: 'DuelSeedFulfilled',
-        args: { duelId },
-        onLogs: (logs) => {
-          for (const log of logs) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const args = log.args as any;
-            if (args.duelId === duelId) {
-              callback(args.seed);
-            }
-          }
-        },
-      });
-      return unwatch;
-    },
-    [publicClient]
-  );
-
   const watchDuelCreated = useCallback(
     (callback: (event: DuelCreatedEvent) => void): (() => void) => {
       const unwatch = publicClient.watchContractEvent({
@@ -505,7 +418,7 @@ export function useTypeNadContract() {
   const watchDuelJoined = useCallback(
     (
       duelId: bigint,
-      callback: (player2: `0x${string}`) => void
+      callback: (player2: `0x${string}`, seed: bigint) => void
     ): (() => void) => {
       const unwatch = publicClient.watchContractEvent({
         address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
@@ -517,7 +430,7 @@ export function useTypeNadContract() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const args = log.args as any;
             if (args.duelId === duelId) {
-              callback(args.player2);
+              callback(args.player2, args.seed);
             }
           }
         },
@@ -527,47 +440,13 @@ export function useTypeNadContract() {
     [publicClient]
   );
 
-  // ============= HELPER: POLL FOR SEED =============
-
-  const pollForGameSeed = useCallback(
-    async (sequenceNumber: bigint, maxAttempts: number = 60): Promise<bigint> => {
-      for (let i = 0; i < maxAttempts; i++) {
-        const session = await getGameSession(sequenceNumber);
-        if (session.fulfilled) {
-          return session.randomSeed;
-        }
-        // Wait 1 second before next poll
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
-      throw new Error('Timeout waiting for game seed');
-    },
-    [getGameSession]
-  );
-
-  const pollForDuelSeed = useCallback(
-    async (duelId: bigint, maxAttempts: number = 60): Promise<bigint> => {
-      for (let i = 0; i < maxAttempts; i++) {
-        const duel = await getDuel(duelId);
-        if (duel.fulfilled) {
-          return duel.randomSeed;
-        }
-        // Wait 1 second before next poll
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
-      throw new Error('Timeout waiting for duel seed');
-    },
-    [getDuel]
-  );
-
   return {
     // Read functions
-    getEntropyFee,
     getUSDCAddress,
     getGameSession,
     getDuel,
     getPlayerActiveSession,
     getDuelCounter,
-    isFallbackMode,
 
     // Write functions
     startGame,
@@ -577,14 +456,8 @@ export function useTypeNadContract() {
     settleDuel,
 
     // Event watchers
-    watchGameSeedFulfilled,
-    watchDuelSeedFulfilled,
     watchDuelCreated,
     watchDuelJoined,
-
-    // Polling helpers
-    pollForGameSeed,
-    pollForDuelSeed,
 
     // State
     isLoading,

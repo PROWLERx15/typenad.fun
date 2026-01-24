@@ -30,8 +30,6 @@ const SoloModeScreen: React.FC<SoloModeScreenProps> = ({
     const { address, isConnected } = usePrivyWallet();
     const {
         startGame,
-        getEntropyFee,
-        pollForGameSeed,
         isLoading: contractLoading,
         error: contractError,
     } = useTypeNadContract();
@@ -48,12 +46,11 @@ const SoloModeScreen: React.FC<SoloModeScreenProps> = ({
     const [customStake, setCustomStake] = useState('');
     const [useCustomStake, setUseCustomStake] = useState(false);
     const [usdcBalance, setUsdcBalance] = useState<bigint>(0n);
-    const [entropyFee, setEntropyFee] = useState<bigint>(0n);
     const [approvalNeeded, setApprovalNeeded] = useState(false);
     const [status, setStatus] = useState<string>('');
     const [error, setError] = useState<string>('');
 
-    // Fetch USDC balance and entropy fee
+    // Fetch USDC balance
     useEffect(() => {
         if (isConnected && address && showStakedModal) {
             const fetchData = async () => {
@@ -62,16 +59,11 @@ const SoloModeScreen: React.FC<SoloModeScreenProps> = ({
                     console.log('Connected:', isConnected);
                     console.log('Address:', address);
 
-                    const [balance, fee] = await Promise.all([
-                        getBalance(),
-                        getEntropyFee(),
-                    ]);
+                    const balance = await getBalance();
 
                     console.log('Balance fetched:', balance.toString());
-                    console.log('Entropy fee fetched:', fee.toString());
 
                     setUsdcBalance(balance);
-                    setEntropyFee(fee);
 
                     const stakeAmount = useCustomStake
                         ? parseUSDC(customStake || '0')
@@ -87,7 +79,7 @@ const SoloModeScreen: React.FC<SoloModeScreenProps> = ({
             };
             fetchData();
         }
-    }, [isConnected, address, showStakedModal, getBalance, getEntropyFee, needsApproval, selectedStake, customStake, useCustomStake]);
+    }, [isConnected, address, showStakedModal, getBalance, needsApproval, selectedStake, customStake, useCustomStake]);
 
     // Update approval needed when stake changes
     useEffect(() => {
@@ -143,14 +135,10 @@ const SoloModeScreen: React.FC<SoloModeScreenProps> = ({
 
             // Start the game on-chain
             setStatus('Confirm transaction in wallet...');
-            const { hash, sequenceNumber } = await startGame(stakeAmount);
-            setStatus('Transaction sent! Waiting for VRF seed...');
+            const { sequenceNumber, seed } = await startGame(stakeAmount);
+            setStatus('Game started! Loading...');
 
-            // Poll for the seed
-            const seed = await pollForGameSeed(sequenceNumber, 120); // 2 min timeout
-            setStatus('Seed received! Starting game...');
-
-            // Trigger the staked game
+            // Trigger the staked game with seed from transaction
             setShowStakedModal(false);
             onStakedGame(sequenceNumber, stakeAmount, seed);
         } catch (err: any) {
@@ -296,14 +284,6 @@ const SoloModeScreen: React.FC<SoloModeScreenProps> = ({
                                     fontFamily: 'inherit',
                                 }}
                             />
-                        </div>
-
-                        {/* Fee Display */}
-                        <div style={{ marginBottom: '16px', color: '#888', fontSize: '10px' }}>
-                            <div>Entropy Fee: ~{(Number(entropyFee) / 1e18).toFixed(6)} WAN</div>
-                            <div style={{ marginTop: '4px', color: '#666' }}>
-                                (VRF fee for provably fair random seed)
-                            </div>
                         </div>
 
                         {/* Status/Error */}

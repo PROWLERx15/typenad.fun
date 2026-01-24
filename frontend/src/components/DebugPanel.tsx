@@ -3,14 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import { usePrivyWallet } from '../hooks/usePrivyWallet';
 import { useUSDC } from '../hooks/useUSDC';
-import { useTypeNadContract } from '../hooks/useTypeNadContract';
 
 export const DebugPanel: React.FC = () => {
     const { address, isConnected } = usePrivyWallet();
     const { getBalance, USDC_ADDRESS } = useUSDC();
-    const { getEntropyFee, publicClient } = useTypeNadContract();
     const [balance, setBalance] = useState<bigint>(0n);
-    const [entropyFee, setEntropyFee] = useState<bigint>(0n);
     const [error, setError] = useState<string>('');
 
     useEffect(() => {
@@ -23,20 +20,10 @@ export const DebugPanel: React.FC = () => {
                     console.error('DebugPanel: Failed to fetch balance:', err);
                     setError(err.message || 'Failed to fetch balance');
                 }
-
-                try {
-                    const fee = await getEntropyFee();
-                    setEntropyFee(fee);
-                } catch (err: any) {
-                    console.error('DebugPanel: Failed to fetch entropy fee:', err);
-                    // Don't set error for entropy fee - it's expected to fail sometimes
-                    // Just use the default value from the catch in getEntropyFee
-                    setEntropyFee(0n);
-                }
             };
             fetchData();
         }
-    }, [isConnected, address, getBalance, getEntropyFee]);
+    }, [isConnected, address, getBalance]);
 
     if (!isConnected) {
         return null;
@@ -73,9 +60,6 @@ export const DebugPanel: React.FC = () => {
             </div>
             <div style={{ marginBottom: '5px' }}>
                 <strong>Balance (raw):</strong> {balance.toString()}
-            </div>
-            <div style={{ marginBottom: '5px' }}>
-                <strong>Entropy Fee:</strong> {(Number(entropyFee) / 1e18).toFixed(6)} WAN
             </div>
             <div style={{ marginBottom: '5px' }}>
                 <strong>RPC:</strong> {process.env.NEXT_PUBLIC_MONAD_RPC_TESTNET || 'fallback'}

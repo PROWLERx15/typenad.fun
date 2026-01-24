@@ -8,7 +8,6 @@ export interface GameSession {
   stake: bigint;
   randomSeed: bigint;
   active: boolean;
-  fulfilled: boolean;
 }
 
 export interface Duel {
@@ -17,7 +16,6 @@ export interface Duel {
   stake: bigint;
   randomSeed: bigint;
   active: boolean;
-  fulfilled: boolean;
 }
 
 // Event types
@@ -25,10 +23,6 @@ export interface GameStartedEvent {
   sequenceNumber: bigint;
   player: `0x${string}`;
   stake: bigint;
-}
-
-export interface GameSeedFulfilledEvent {
-  sequenceNumber: bigint;
   seed: bigint;
 }
 
@@ -49,10 +43,6 @@ export interface DuelCreatedEvent {
 export interface DuelJoinedEvent {
   duelId: bigint;
   player2: `0x${string}`;
-}
-
-export interface DuelSeedFulfilledEvent {
-  duelId: bigint;
   seed: bigint;
 }
 
@@ -119,7 +109,6 @@ export interface StakedGameState {
   sequenceNumber: bigint | null;
   stake: bigint | null;
   randomSeed: bigint | null;
-  seedFulfilled: boolean;
 }
 
 // Duel state
@@ -128,7 +117,6 @@ export interface DuelGameState {
   opponentAddress: `0x${string}` | null;
   stake: bigint | null;
   randomSeed: bigint | null;
-  seedFulfilled: boolean;
   isPlayer1: boolean;
 }
 
@@ -148,7 +136,6 @@ export type StakeOption = (typeof STAKE_OPTIONS)[number];
 export const CONTRACTS = {
   TYPE_NAD: (process.env.NEXT_PUBLIC_TYPE_NAD_CONTRACT_ADDRESS || '') as `0x${string}`,
   USDC: (process.env.NEXT_PUBLIC_USDC_ADDRESS || '') as `0x${string}`,
-  ENTROPY: (process.env.NEXT_PUBLIC_ENTROPY_ADDRESS || '') as `0x${string}`,
   VERIFIER: (process.env.VERIFIER_ADDRESS || '') as `0x${string}`,
 } as const;
 

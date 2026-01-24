@@ -21,7 +21,6 @@ interface DuelInfo {
   stake: bigint;
   randomSeed: bigint;
   active: boolean;
-  fulfilled: boolean;
 }
 
 interface PVPModeScreenProps {
@@ -51,10 +50,8 @@ const PVPModeScreen: React.FC<PVPModeScreenProps> = ({
     joinDuel,
     getDuel,
     getDuelCounter,
-    pollForDuelSeed,
     watchDuelCreated,
     watchDuelJoined,
-    getEntropyFee,
     isLoading: contractLoading,
     error: contractError,
   } = useTypeNadContract();
@@ -70,7 +67,6 @@ const PVPModeScreen: React.FC<PVPModeScreenProps> = ({
   const [customStake, setCustomStake] = useState('');
   const [useCustomStake, setUseCustomStake] = useState(false);
   const [usdcBalance, setUsdcBalance] = useState<bigint>(0n);
-  const [entropyFee, setEntropyFee] = useState<bigint>(0n);
   const [status, setStatus] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [openDuels, setOpenDuels] = useState<DuelInfo[]>([]);
@@ -83,9 +79,8 @@ const PVPModeScreen: React.FC<PVPModeScreenProps> = ({
     if (isConnected && address) {
       const fetchData = async () => {
         try {
-          const [balance, fee] = await Promise.all([getBalance(), getEntropyFee()]);
+          const balance = await getBalance();
           setUsdcBalance(balance);
-          setEntropyFee(fee);
         } catch (err) {
           console.error('Failed to fetch data:', err);
         }
@@ -115,7 +110,7 @@ const PVPModeScreen: React.FC<PVPModeScreenProps> = ({
       };
       fetchOpenDuels();
     }
-  }, [isConnected, address, getBalance, getEntropyFee, getDuel, getDuelCounter]);
+  }, [isConnected, address, getBalance, getDuel, getDuelCounter]);
 
   // Watch for new duels
   useEffect(() => {
@@ -134,7 +129,6 @@ const PVPModeScreen: React.FC<PVPModeScreenProps> = ({
             stake: event.stake,
             randomSeed: 0n,
             active: true,
-            fulfilled: false,
           },
         ];
       });
@@ -147,21 +141,14 @@ const PVPModeScreen: React.FC<PVPModeScreenProps> = ({
   useEffect(() => {
     if (!createdDuelId || !waitingForOpponent) return;
 
-    const unwatch = watchDuelJoined(createdDuelId, async (player2) => {
-      setStatus('Opponent joined! Waiting for VRF seed...');
-      try {
-        const seed = await pollForDuelSeed(createdDuelId, 120);
-        setStatus('Seed received! Starting duel...');
-        setWaitingForOpponent(false);
-        onDuelStart(createdDuelId, selectedStake, seed, true);
-      } catch (err: any) {
-        setError('Failed to get seed: ' + err.message);
-        setStatus('');
-      }
+    const unwatch = watchDuelJoined(createdDuelId, async (player2, seed) => {
+      setStatus('Opponent joined! Starting duel...');
+      setWaitingForOpponent(false);
+      onDuelStart(createdDuelId, selectedStake, seed, true);
     });
 
     return () => unwatch();
-  }, [createdDuelId, waitingForOpponent, pollForDuelSeed, onDuelStart, selectedStake, watchDuelJoined]);
+  }, [createdDuelId, waitingForOpponent, onDuelStart, selectedStake, watchDuelJoined]);
 
   const getEffectiveStake = useCallback((): bigint => {
     if (useCustomStake && customStake) {
@@ -223,11 +210,8 @@ const PVPModeScreen: React.FC<PVPModeScreenProps> = ({
       await ensureApproval(stake);
       setStatus('Joining duel...');
 
-      await joinDuel(duelId);
-      setStatus('Waiting for VRF seed...');
-
-      const seed = await pollForDuelSeed(duelId, 120);
-      setStatus('Seed received! Starting duel...');
+      const { seed } = await joinDuel(duelId);
+      setStatus('Starting duel...');
 
       onDuelStart(duelId, stake, seed, false);
     } catch (err: any) {

@@ -4,11 +4,6 @@ export const TYPE_NAD_ABI = [
     "type": "constructor",
     "inputs": [
       {
-        "name": "_entropy",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
         "name": "_verifier",
         "type": "address",
         "internalType": "address"
@@ -59,29 +54,6 @@ export const TYPE_NAD_ABI = [
       }
     ],
     "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "_entropyCallback",
-    "inputs": [
-      {
-        "name": "sequence",
-        "type": "uint64",
-        "internalType": "uint64"
-      },
-      {
-        "name": "provider",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "randomNumber",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -150,43 +122,6 @@ export const TYPE_NAD_ABI = [
         "name": "active",
         "type": "bool",
         "internalType": "bool"
-      },
-      {
-        "name": "fulfilled",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "entropy",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IEntropyV2"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "entropyRequestToDuelId",
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint64",
-        "internalType": "uint64"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -221,24 +156,6 @@ export const TYPE_NAD_ABI = [
         "name": "active",
         "type": "bool",
         "internalType": "bool"
-      },
-      {
-        "name": "fulfilled",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getEntropyFee",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -266,8 +183,14 @@ export const TYPE_NAD_ABI = [
         "internalType": "uint256"
       }
     ],
-    "outputs": [],
-    "stateMutability": "payable"
+    "outputs": [
+      {
+        "name": "seed",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -307,25 +230,6 @@ export const TYPE_NAD_ABI = [
     "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "requestTypes",
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint64",
-        "internalType": "uint64"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint8",
-        "internalType": "enum TypeNad.RequestType"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -411,9 +315,14 @@ export const TYPE_NAD_ABI = [
         "name": "sequenceNumber",
         "type": "uint64",
         "internalType": "uint64"
+      },
+      {
+        "name": "seed",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
-    "stateMutability": "payable"
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -453,45 +362,6 @@ export const TYPE_NAD_ABI = [
       }
     ],
     "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "isFallbackMode",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "useFallbackRandomness",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "setFallbackMode",
-    "inputs": [
-      {
-        "name": "enabled",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -547,19 +417,6 @@ export const TYPE_NAD_ABI = [
         "type": "address",
         "indexed": true,
         "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "DuelSeedFulfilled",
-    "inputs": [
-      {
-        "name": "duelId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
       },
       {
         "name": "seed",
@@ -588,25 +445,6 @@ export const TYPE_NAD_ABI = [
       },
       {
         "name": "payout",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "GameSeedFulfilled",
-    "inputs": [
-      {
-        "name": "sequenceNumber",
-        "type": "uint64",
-        "indexed": true,
-        "internalType": "uint64"
-      },
-      {
-        "name": "seed",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -672,6 +510,12 @@ export const TYPE_NAD_ABI = [
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      },
+      {
+        "name": "seed",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -697,6 +541,50 @@ export const TYPE_NAD_ABI = [
   },
   {
     "type": "error",
+    "name": "DuelAlreadySettled",
+    "inputs": [
+      {
+        "name": "duelId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "DuelFull",
+    "inputs": [
+      {
+        "name": "duelId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "DuelNotActive",
+    "inputs": [
+      {
+        "name": "duelId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "DuelNotStarted",
+    "inputs": [
+      {
+        "name": "duelId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "ECDSAInvalidSignature",
     "inputs": []
   },
@@ -719,6 +607,59 @@ export const TYPE_NAD_ABI = [
         "name": "s",
         "type": "bytes32",
         "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "GameAlreadyInProgress",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "activeSession",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidSignature",
+    "inputs": [
+      {
+        "name": "recovered",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "expected",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NoFundsToWithdraw",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotPlayer",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
       }
     ]
   },
@@ -755,6 +696,54 @@ export const TYPE_NAD_ABI = [
     "inputs": [
       {
         "name": "token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "SessionNotActive",
+    "inputs": [
+      {
+        "name": "sequenceNumber",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "StakeRequired",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "TransferFailed",
+    "inputs": [
+      {
+        "name": "to",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "WinnerNotParticipant",
+    "inputs": [
+      {
+        "name": "duelId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "winner",
         "type": "address",
         "internalType": "address"
       }
