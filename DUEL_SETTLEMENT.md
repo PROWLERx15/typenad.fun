@@ -1,12 +1,12 @@
-# Duel Settlement System
+# Duel & Solo Game Settlement System
 
 ## Overview
 
-The duel settlement system has been redesigned to provide a seamless user experience where players automatically receive their winnings without needing to approve any transactions. Settlement is now handled by a backend service using the verifier wallet, eliminating wallet approval popups for players.
+Both the duel and solo game settlement systems have been redesigned to provide a seamless user experience where players automatically receive their winnings without needing to approve any transactions. Settlement is now handled by a backend service using the verifier wallet, eliminating wallet approval popups for players.
 
 ## Architecture
 
-### Flow
+### Duel Settlement Flow
 
 1. **Game Completion**: Both players complete the duel and submit their results to Supabase
 2. **Automatic Trigger**: When both results are submitted, the frontend triggers backend settlement
@@ -19,12 +19,33 @@ The duel settlement system has been redesigned to provide a seamless user experi
 4. **Status Updates**: Frontend polls for settlement status and displays results
 5. **Payout**: Winner automatically receives USDC (no approval needed!)
 
+### Solo Game Settlement Flow
+
+1. **Game Completion**: Player completes the solo staked game
+2. **Automatic Trigger**: Frontend triggers backend settlement immediately
+3. **Backend Execution**: The backend service:
+   - Validates game stats (misses, typos, WPM)
+   - Calculates payout based on performance
+   - Generates a cryptographic signature
+   - Executes the `settleGame()` transaction using the verifier wallet
+   - Waits for blockchain confirmation
+4. **Status Updates**: Frontend polls for settlement status and displays results
+5. **Payout**: Player automatically receives USDC (no approval needed!)
+
 ### Key Components
 
-- **`/api/execute-settlement`**: Executes settlement transaction using verifier wallet
-- **`/api/settlement-status`**: Returns current settlement status for polling
+**Duel Settlement:**
+
+- **`/api/execute-settlement`**: Executes duel settlement transaction using verifier wallet
+- **`/api/settlement-status`**: Returns current duel settlement status for polling
 - **`lib/verifierWallet.ts`**: Utility for creating verifier wallet client
 - **`DuelGameOver.tsx`**: Updated to use backend settlement with polling
+
+**Solo Game Settlement:**
+- **`/api/execute-game-settlement`**: Executes solo game settlement transaction using verifier wallet
+- **`/api/game-settlement-status`**: Returns current game settlement status for polling
+- **`lib/verifierWallet.ts`**: Shared utility for creating verifier wallet client
+- **`StakedGameOver.tsx`**: Updated to use backend settlement with polling
 
 ## Environment Variables
 
@@ -49,7 +70,9 @@ NEXT_PUBLIC_MONAD_RPC_TESTNET=https://testnet-rpc.monad.xyz
 
 ## API Endpoints
 
-### POST /api/execute-settlement
+### Duel Settlement
+
+#### POST /api/execute-settlement
 
 Executes the duel settlement transaction using the backend verifier wallet.
 
@@ -102,7 +125,66 @@ Check the current status of a duel settlement.
 - `settled`: Settlement complete
 - `error`: Settlement failed
 
-## Winner Determination
+### Solo Game Settlement
+
+#### POST /api/execute-game-settlement
+
+Executes the solo game settlement transaction using the backend verifier wallet.
+
+**Request:**
+```json
+{
+  "sequenceNumber": "123",
+  "misses": 5,
+  "typos": 2,
+  "bonusAmount": "50000",
+  "playerAddress": "0x..."
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "txHash": "0x...",
+  "payout": "1800000",
+  "gasUsed": "120000"
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "Error message",
+  "temporary": true
+}
+```
+
+#### GET /api/game-settlement-status?sequenceNumber=123
+
+Check the current status of a solo game settlement.
+
+**Response:**
+```json
+{
+  "success": true,
+  "status": "settled",
+  "payout": "1800000",
+  "txHash": "0x...",
+  "player": "0x..."
+}
+```
+
+**Status Values:**
+- `pending`: Game in progress or settlement not started
+- `settling`: Settlement transaction in progress
+- `settled`: Settlement complete
+- `error`: Settlement failed
+
+## Payout Calculation
+
+### Duel Games
 
 Winners are determined using the following priority:
 
@@ -112,6 +194,34 @@ Winners are determined using the following priority:
 4. If still tied, **Player 1 (creator)** wins
 
 This logic is implemented consistently in both the backend API and frontend display.
+
+### Solo Games
+
+Payout is calculated based on performance:
+
+1. **Base**: Stake amount
+2. **Bonus**: WPM × 0.001 USDC (e.g., 50 WPM = 0.05 USDC bonus)
+3. **Penalties**: 
+   - First 10 misses are free
+   - Each miss after 10: -0.1 USDC
+   - Each typo: -0.1 USDC
+4. **Platform Fee**: 10% of gross payout
+
+**Formula:**
+```
+Gross Payout = Stake + Bonus - Penalties
+Platform Fee = Gross Payout × 10%
+Net Payout = Gross Payout - Platform Fee
+```
+
+**Example:**
+- Stake: 1 USDC
+- WPM: 60 → Bonus: 0.06 USDC
+- Misses: 15 → Penalty: 0.5 USDC (5 penalized misses)
+- Typos: 2 → Penalty: 0.2 USDC
+- Gross: 1 + 0.06 - 0.5 - 0.2 = 0.36 USDC
+- Fee: 0.036 USDC
+- Net Payout: 0.324 USDC
 
 ## Error Handling
 

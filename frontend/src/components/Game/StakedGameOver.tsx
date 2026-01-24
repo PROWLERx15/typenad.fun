@@ -28,8 +28,7 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
   onBackToMenu,
 }) => {
   const { address } = usePrivyWallet();
-  const { settleGame } = useTypeNadContract();
-  const [status, setStatus] = useState<'idle' | 'signing' | 'settling' | 'settled' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'settling' | 'settled' | 'error'>('idle');
   const [error, setError] = useState<string>('');
   const [payout, setPayout] = useState<bigint | null>(null);
   const [txHash, setTxHash] = useState<string>('');
@@ -52,13 +51,18 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
     return netPayout;
   };
 
-  const handleSettle = async () => {
-    setStatus('signing');
+  // Trigger backend settlement
+  const triggerBackendSettlement = async () => {
+    setStatus('settling');
     setError('');
 
     try {
-      // Call backend to get signature
-      const response = await fetch('/api/settle-game', {
+      console.log('[StakedGameOver] Triggering backend settlement', {
+        sequenceNumber: sequenceNumber.toString(),
+      });
+
+      // Call backend to execute settlement (backend pays gas, no wallet approval needed!)
+      const response = await fetch('/api/execute-game-settlement', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -72,35 +76,81 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to get signature');
+        throw new Error(data.error || 'Failed to trigger settlement');
       }
 
-      const { signature } = await response.json();
+      const result = await response.json();
 
-      setStatus('settling');
+      if (result.success) {
+        // Settlement executed successfully
+        setPayout(BigInt(result.payout || '0'));
+        setTxHash(result.txHash || '');
+        setStatus('settled');
+      } else {
+        throw new Error(result.error || 'Settlement failed');
+      }
 
-      // Call contract to settle
-      const result = await settleGame(
-        sequenceNumber,
-        BigInt(missCount),
-        BigInt(typoCount),
-        bonusAmount,
-        signature as `0x${string}`
-      );
-
-      setPayout(result.payout);
-      setTxHash(result.hash);
-      setStatus('settled');
     } catch (err: unknown) {
-      console.error('Settlement failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to settle game');
+      console.error('[StakedGameOver] Settlement trigger failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to trigger settlement');
       setStatus('error');
     }
   };
 
+  // Poll for settlement status
+  useEffect(() => {
+    if (status !== 'settling') return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/game-settlement-status?sequenceNumber=${sequenceNumber.toString()}`);
+        if (!response.ok) {
+          console.error('[StakedGameOver] Failed to fetch settlement status');
+          return;
+        }
+
+        const data = await response.json();
+        
+        if (data.status === 'settled') {
+          // Settlement complete!
+          clearInterval(pollInterval);
+          setPayout(BigInt(data.payout || '0'));
+          setTxHash(data.txHash || '');
+          setStatus('settled');
+        } else if (data.status === 'error') {
+          clearInterval(pollInterval);
+          setError(data.error || 'Settlement failed');
+          setStatus('error');
+        }
+      } catch (err) {
+        console.error('[StakedGameOver] Error polling settlement status:', err);
+      }
+    }, 2000); // Poll every 2 seconds
+
+    // Timeout after 60 seconds
+    const timeout = setTimeout(() => {
+      clearInterval(pollInterval);
+      if (status === 'settling') {
+        setError('Settlement timeout - please check transaction manually');
+        setStatus('error');
+      }
+    }, 60000);
+
+    return () => {
+      clearInterval(pollInterval);
+      clearTimeout(timeout);
+    };
+  }, [status, sequenceNumber]);
+
+  const handleRetrySettlement = async () => {
+    setError('');
+    setStatus('settling');
+    await triggerBackendSettlement();
+  };
+
   // Auto-settle on mount
   useEffect(() => {
-    handleSettle();
+    triggerBackendSettlement();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const estimatedPayout = estimatePayout();
@@ -145,15 +195,9 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
         </div>
 
         {/* Settlement Status */}
-        {status === 'signing' && (
-          <p style={{ color: '#8B5CF6', fontSize: '12px', marginBottom: '16px' }}>
-            Getting signature from server...
-          </p>
-        )}
-
         {status === 'settling' && (
           <p style={{ color: '#8B5CF6', fontSize: '12px', marginBottom: '16px' }}>
-            Confirming transaction on chain...
+            Settlement in progress (no approval needed)...
           </p>
         )}
 
@@ -186,7 +230,7 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
           <div style={{ marginBottom: '16px' }}>
             <p style={{ color: '#ef4444', fontSize: '12px', marginBottom: '8px' }}>{error}</p>
             <button
-              onClick={handleSettle}
+              onClick={handleRetrySettlement}
               style={{
                 padding: '8px 16px',
                 backgroundColor: '#8B5CF6',
