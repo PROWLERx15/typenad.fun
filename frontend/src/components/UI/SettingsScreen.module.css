@@ -101,3 +101,29 @@
   background: rgba(139, 92, 246, 0.3);
   border-color: rgba(139, 92, 246, 0.8);
 }
+
+.logoutButton {
+  width: 100%;
+  margin-top: 40px;
+  padding: 16px;
+  background: rgba(255, 68, 68, 0.1);
+  border: 2px solid #FF4444;
+  color: #FF4444;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  text-shadow: 0 0 5px rgba(255, 68, 68, 0.5);
+}
+
+.logoutButton:hover {
+  background: rgba(255, 68, 68, 0.2);
+  box-shadow: 0 0 20px rgba(255, 68, 68, 0.4);
+  transform: translateY(-2px);
+}
+
+.logoutButton:active {
+  transform: translateY(0);
+}

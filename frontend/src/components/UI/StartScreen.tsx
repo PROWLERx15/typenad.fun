@@ -3,7 +3,7 @@
 import React from 'react';
 import { FONT_IMPORT } from '../../styles/theme';
 import { useSoundSettings } from '../../hooks/useSoundSettings';
-import { usePrivyWallet, usePrivyDisconnect } from '../../hooks/usePrivyWallet';
+import { usePrivyWallet } from '../../hooks/usePrivyWallet';
 import styles from './StartScreen.module.css';
 
 interface StartScreenProps {
@@ -28,7 +28,7 @@ interface StartScreenProps {
 const StartScreen: React.FC<StartScreenProps> = ({ onStart, onTimeAttack, onStory, onHowTo, onSolo, onMultiplayer, onLeaderboard, onShop, onCrypt, onSettings, disabled, statusText, chainId, incomingMessage, selectedPowerups, onPowerupsChange }) => {
     const { sfxMuted, sfxVolume } = useSoundSettings();
     const { isConnected, address, login, ready, authenticated, walletError, clearWalletError, logout } = usePrivyWallet();
-    const { disconnect } = usePrivyDisconnect();
+
     const mouseOverRef = React.useRef<HTMLAudioElement>(null);
 
     const isWalletReady = isConnected && address;
@@ -179,13 +179,6 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart, onTimeAttack, onStor
                             {address && (
                                 <div className={styles.chainIdContainer}>
                                     Wallet: {address.slice(0, 6)}...{address.slice(-4)}
-                                    <br />
-                                    <button
-                                        onClick={() => disconnect()}
-                                        className={styles.walletActionButton}
-                                    >
-                                        Disconnect Wallet
-                                    </button>
                                 </div>
                             )}
                         </div>

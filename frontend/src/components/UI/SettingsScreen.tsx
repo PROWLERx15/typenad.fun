@@ -5,9 +5,10 @@ import styles from './SettingsScreen.module.css';
 
 interface SettingsScreenProps {
   onClose: () => void;
+  onLogout: () => void;
 }
 
-const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
+const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose, onLogout }) => {
   const { sfxMuted, musicMuted, sfxVolume, musicVolume, toggleSfx, toggleMusic, setSfxVolume, setMusicVolume } = useSoundSettings();
   const gunSoundRef = useRef<HTMLAudioElement>(null);
 
@@ -46,7 +47,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
   const handleTestSfx = () => {
     if (!sfxMuted && gunSoundRef.current) {
       gunSoundRef.current.currentTime = 0;
-      gunSoundRef.current.play().catch(() => {});
+      gunSoundRef.current.play().catch(() => { });
     }
   };
 
@@ -138,6 +139,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
             />
           </div>
         </div>
+
+        <button onClick={onLogout} className={styles.logoutButton}>
+          Logout
+        </button>
       </div>
     </div>
   );

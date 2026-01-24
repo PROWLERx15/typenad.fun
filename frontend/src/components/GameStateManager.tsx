@@ -31,7 +31,7 @@ const GameStateManager: React.FC = () => {
     const { address, isConnected, walletError, clearWalletError, logout } = usePrivyWallet();
     const { syncing, synced, error: syncError } = useAuthSync();
     const { gold, updateGold, addGold } = useGoldBalance();
-    
+
     const [gameState, setGameState] = useState<'start' | 'playing' | 'gameOver' | 'pvp' | 'solo' | 'multiplayer' | 'leaderboard' | 'shop' | 'crypt' | 'settings'>('start');
     const [showOnboardingOverlay, setShowOnboardingOverlay] = useState(false);
     const [showMigrationPrompt, setShowMigrationPrompt] = useState(false);
@@ -72,7 +72,7 @@ const GameStateManager: React.FC = () => {
             const consumed = consumeEquippedPowerups();
             console.log('🎯 Consumed powerups:', consumed);
             setSelectedPowerups(consumed);
-            
+
             // Sync consumption to database
             if (address) {
                 try {
@@ -568,6 +568,10 @@ const GameStateManager: React.FC = () => {
                     settings: (
                         <SettingsScreen
                             onClose={() => setGameState('start')}
+                            onLogout={() => {
+                                logout();
+                                setGameState('start');
+                            }}
                         />
                     ),
                 };
