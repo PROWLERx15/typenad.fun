@@ -79,6 +79,10 @@ const useEnemies = (
             }
 
             // Speed values for each enemy type
+            // In survival mode, speeds are reduced by 30% for better playability
+            const isSurvivalMode = waveCallbacksRef.current?.isSurvival || false;
+            const survivalSpeedFactor = isSurvivalMode ? 0.7 : 1.0;
+
             const baseSpeed = enemyType === 'scout' ? 1
                 : enemyType === 'cruiser' ? 2
                     : enemyType === 'drone' ? 4
@@ -88,7 +92,7 @@ const useEnemies = (
                                     : enemyType === 'dreadnought' ? 2
                                         : 0; // asteroid
 
-            const speed = baseSpeed * speedMultiplier;
+            const speed = baseSpeed * speedMultiplier * survivalSpeedFactor;
 
             setEnemies((prev) => {
                 // Only one asteroid on screen at a time
