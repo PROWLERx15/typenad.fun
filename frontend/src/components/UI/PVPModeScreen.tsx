@@ -140,17 +140,61 @@ const PVPModeScreen: React.FC<PVPModeScreenProps> = ({
   }, [isConnected, watchDuelCreated]);
 
   // Watch for opponent joining created duel
+  // Watch for opponent joining created duel (Hybrid: Event + Polling)
   useEffect(() => {
     if (!createdDuelId || !waitingForOpponent) return;
 
-    const unwatch = watchDuelJoined(createdDuelId, async (player2, seed) => {
+    let isActive = true;
+    let hasStarted = false;
+
+    const handleStart = (seed: bigint) => {
+      if (hasStarted || !isActive) return;
+      hasStarted = true;
       setStatus('Opponent joined! Starting duel...');
       setWaitingForOpponent(false);
       onDuelStart(createdDuelId, selectedStake, seed, true);
+    };
+
+    // 1. Instant Check (in case they joined while we were mounting)
+    const checkStatus = async () => {
+      try {
+        const duel = await getDuel(createdDuelId);
+        if (duel.active && duel.player2 !== '0x0000000000000000000000000000000000000000') {
+          console.log('[DuelSync] Instant check found opponent');
+          handleStart(duel.randomSeed);
+        }
+      } catch (err) {
+        console.error('[DuelSync] Initial check failed:', err);
+      }
+    };
+    checkStatus();
+
+    // 2. Event Listener (Fast Path)
+    const unwatch = watchDuelJoined(createdDuelId, async (player2, seed) => {
+      console.log('[DuelSync] Event received');
+      handleStart(seed);
     });
 
-    return () => unwatch();
-  }, [createdDuelId, waitingForOpponent, onDuelStart, selectedStake, watchDuelJoined]);
+    // 3. Polling Fallback (Reliable Path)
+    const intervalId = setInterval(async () => {
+      if (hasStarted || !isActive) return;
+      try {
+        const duel = await getDuel(createdDuelId);
+        if (duel.active && duel.player2 !== '0x0000000000000000000000000000000000000000') {
+          console.log('[DuelSync] Polling found opponent');
+          handleStart(duel.randomSeed);
+        }
+      } catch (err) {
+        // Silent error on polling
+      }
+    }, 3000);
+
+    return () => {
+      isActive = false;
+      unwatch();
+      clearInterval(intervalId);
+    };
+  }, [createdDuelId, waitingForOpponent, onDuelStart, selectedStake, watchDuelJoined, getDuel]);
 
   const getEffectiveStake = useCallback((): bigint => {
     if (useCustomStake && customStake) {

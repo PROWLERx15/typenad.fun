@@ -42,7 +42,7 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
   onBackToMenu,
 }) => {
   const { address } = usePrivyWallet();
-  const { settleDuel, getDuel } = useTypeNadContract();
+  const { settleDuel, getDuel, getDuelResult } = useTypeNadContract();
   const [status, setStatus] = useState<'submitting' | 'waiting' | 'signing' | 'settling' | 'settled' | 'error'>('submitting');
   const [error, setError] = useState<string>('');
   const [payout, setPayout] = useState<bigint | null>(null);
@@ -81,7 +81,7 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
     const submitOwnResults = async () => {
       try {
         setStatus('submitting');
-        
+
         // Upsert own results
         const { error: upsertError } = await supabase
           .from('duel_results')
@@ -100,7 +100,7 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
           console.error('Failed to submit results:', upsertError);
           // Don't fail completely, opponent might still submit
         }
-        
+
         setOwnResultSubmitted(true);
         setStatus('waiting');
       } catch (err) {
@@ -211,7 +211,23 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
     setError('');
 
     try {
-      // Prepare player data for API
+      // 1. Check if duel is already settled on-chain (Race Condition Check)
+      const duelState = await getDuel(duelId);
+      if (!duelState.active) {
+        console.log('[DuelSettlement] Duel already inactive, fetching past result...');
+        const pastResult = await getDuelResult(duelId);
+        if (pastResult) {
+          setPayout(pastResult.payout);
+          // Retrieve winner from past result
+          setWinner(pastResult.winner.toLowerCase() === address.toLowerCase() ? 'you' : 'opponent');
+          setStatus('settled');
+          // Clean up DB
+          await supabase.from('duel_results').delete().eq('duel_id', duelId.toString());
+          return;
+        }
+      }
+
+      // 2. Prepare player data for API
       const myPlayerData = {
         address: address,
         score,
@@ -232,7 +248,7 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
       const player1Data = isCreator ? myPlayerData : opponentPlayerData;
       const player2Data = isCreator ? opponentPlayerData : myPlayerData;
 
-      // Call backend to determine winner and get signature
+      // 3. Call backend to determine winner and get signature
       const response = await fetch('/api/settle-duel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -252,12 +268,31 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
 
       setStatus('settling');
 
-      // Call contract to settle
-      const result = await settleDuel(duelId, winnerAddress as `0x${string}`, signature as `0x${string}`);
+      // 4. Call contract to settle
+      try {
+        const result = await settleDuel(duelId, winnerAddress as `0x${string}`, signature as `0x${string}`);
+        setPayout(result.payout);
+        setTxHash(result.hash);
+        setStatus('settled');
+      } catch (contractErr: any) {
+        // 5. Handle "DuelAlreadySettled" race condition during transaction
+        console.error('[DuelSettlement] Contract call failed:', contractErr);
+        const errorMessage = contractErr.message || JSON.stringify(contractErr);
 
-      setPayout(result.payout);
-      setTxHash(result.hash);
-      setStatus('settled');
+        if (errorMessage.includes('DuelAlreadySettled') || errorMessage.includes('revert')) {
+          console.log('[DuelSettlement] Transaction reverted (likely race condition). Fetching event logs...');
+          // Verify if it was indeed settled just now
+          const pastResult = await getDuelResult(duelId);
+          if (pastResult) {
+            setPayout(pastResult.payout);
+            setWinner(pastResult.winner.toLowerCase() === address.toLowerCase() ? 'you' : 'opponent');
+            setStatus('settled');
+            await supabase.from('duel_results').delete().eq('duel_id', duelId.toString());
+            return;
+          }
+        }
+        throw contractErr; // Rethrow real errors
+      }
 
       // Clean up duel results from database
       await supabase
@@ -267,6 +302,19 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
 
     } catch (err: unknown) {
       console.error('Duel settlement failed:', err);
+      // Final fallback check
+      try {
+        const pastResult = await getDuelResult(duelId);
+        if (pastResult) {
+          setPayout(pastResult.payout);
+          setWinner(pastResult.winner.toLowerCase() === address.toLowerCase() ? 'you' : 'opponent');
+          setStatus('settled');
+          return;
+        }
+      } catch (e) {
+        // ignore
+      }
+
       setError(err instanceof Error ? err.message : 'Failed to settle duel');
       setStatus('error');
     }
@@ -283,12 +331,12 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
           {status === 'submitting'
             ? '📤 Submitting...'
             : waitingForOpponent
-            ? '⏳ Waiting for Opponent...'
-            : status === 'settled'
-            ? isWinner
-              ? '🏆 You Win!'
-              : '💀 You Lose!'
-            : 'Settling Duel...'}
+              ? '⏳ Waiting for Opponent...'
+              : status === 'settled'
+                ? isWinner
+                  ? '🏆 You Win!'
+                  : '💀 You Lose!'
+                : 'Settling Duel...'}
         </h1>
 
         {/* Score Comparison */}

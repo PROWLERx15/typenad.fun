@@ -390,6 +390,34 @@ export function useTypeNadContract() {
     [getWalletClient, publicClient, address]
   );
 
+  // Helper to fetch past settlement event (for race condition handling)
+  const getDuelResult = useCallback(
+    async (duelId: bigint): Promise<{ winner: `0x${string}`; payout: bigint } | null> => {
+      try {
+        const logs = await publicClient.getContractEvents({
+          address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
+          abi: TYPE_NAD_ABI,
+          eventName: 'DuelSettled',
+          args: { duelId },
+          fromBlock: 'earliest',
+        });
+
+        if (logs.length > 0) {
+          const args = logs[0].args as any;
+          return {
+            winner: args.winner,
+            payout: args.payout,
+          };
+        }
+        return null;
+      } catch (err) {
+        console.error('Failed to fetch duel result:', err);
+        return null;
+      }
+    },
+    [publicClient]
+  );
+
   // ============= EVENT WATCHERS =============
 
   const watchDuelCreated = useCallback(
@@ -557,6 +585,7 @@ export function useTypeNadContract() {
     getPlayerActiveSession,
     getDuelCounter,
     getCancelFeeBps,
+    getDuelResult,
 
     // Write functions
     startGame,
