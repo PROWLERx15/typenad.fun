@@ -1,4 +1,4 @@
-export const TYPE_NAD_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_TYPE_NAD_CONTRACT_ADDRESS || "";
+export const TYPE_NAD_CONTRACT_ADDRESS = "0xD5119b75aD18fF2a2018F1d0827B573Aee9390EB";
 export const TYPE_NAD_ABI = [
   {
     "type": "constructor",
@@ -15,6 +15,19 @@ export const TYPE_NAD_ABI = [
       }
     ],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "CANCEL_FEE_BPS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -54,6 +67,26 @@ export const TYPE_NAD_ABI = [
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "cancelDuel",
+    "inputs": [
+      {
+        "name": "duelId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "cancelGame",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -379,6 +412,31 @@ export const TYPE_NAD_ABI = [
   },
   {
     "type": "event",
+    "name": "DuelCancelled",
+    "inputs": [
+      {
+        "name": "duelId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "player1",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "refund",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "DuelCreated",
     "inputs": [
       {
@@ -445,6 +503,31 @@ export const TYPE_NAD_ABI = [
       },
       {
         "name": "payout",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "GameCancelled",
+    "inputs": [
+      {
+        "name": "sequenceNumber",
+        "type": "uint64",
+        "indexed": true,
+        "internalType": "uint64"
+      },
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "refund",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -538,6 +621,17 @@ export const TYPE_NAD_ABI = [
       }
     ],
     "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "CannotCancelStartedDuel",
+    "inputs": [
+      {
+        "name": "duelId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",
@@ -646,6 +740,22 @@ export const TYPE_NAD_ABI = [
     "type": "error",
     "name": "NoFundsToWithdraw",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotDuelCreator",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "creator",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
     "type": "error",

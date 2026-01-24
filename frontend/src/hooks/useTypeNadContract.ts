@@ -440,6 +440,115 @@ export function useTypeNadContract() {
     [publicClient]
   );
 
+  // ============= CANCEL FUNCTIONS =============
+
+  const getCancelFeeBps = useCallback(async (): Promise<bigint> => {
+    const fee = await publicClient.readContract({
+      address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
+      abi: TYPE_NAD_ABI,
+      functionName: 'CANCEL_FEE_BPS',
+    });
+    return fee as bigint;
+  }, [publicClient]);
+
+  const cancelGame = useCallback(
+    async (): Promise<{ hash: `0x${string}`; refund: bigint }> => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const walletClient = await getWalletClient();
+
+        const hash = await walletClient.writeContract({
+          address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
+          abi: TYPE_NAD_ABI,
+          functionName: 'cancelGame',
+          args: [],
+          chain: monadTestnet,
+          account: address as `0x${string}`,
+        });
+
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+        // Parse refund from GameCancelled event
+        let refund: bigint = 0n;
+        for (const log of receipt.logs) {
+          try {
+            const decoded = decodeEventLog({
+              abi: TYPE_NAD_ABI,
+              data: log.data,
+              topics: log.topics,
+            });
+            if (decoded.eventName === 'GameCancelled') {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const args = decoded.args as any;
+              refund = args.refund;
+              break;
+            }
+          } catch {
+            // Not our event
+          }
+        }
+
+        return { hash, refund };
+      } catch (err) {
+        setError(err as Error);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [getWalletClient, publicClient, address]
+  );
+
+  const cancelDuel = useCallback(
+    async (duelId: bigint): Promise<{ hash: `0x${string}`; refund: bigint }> => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const walletClient = await getWalletClient();
+
+        const hash = await walletClient.writeContract({
+          address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
+          abi: TYPE_NAD_ABI,
+          functionName: 'cancelDuel',
+          args: [duelId],
+          chain: monadTestnet,
+          account: address as `0x${string}`,
+        });
+
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+        // Parse refund from DuelCancelled event
+        let refund: bigint = 0n;
+        for (const log of receipt.logs) {
+          try {
+            const decoded = decodeEventLog({
+              abi: TYPE_NAD_ABI,
+              data: log.data,
+              topics: log.topics,
+            });
+            if (decoded.eventName === 'DuelCancelled') {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const args = decoded.args as any;
+              refund = args.refund;
+              break;
+            }
+          } catch {
+            // Not our event
+          }
+        }
+
+        return { hash, refund };
+      } catch (err) {
+        setError(err as Error);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [getWalletClient, publicClient, address]
+  );
+
   return {
     // Read functions
     getUSDCAddress,
@@ -447,6 +556,7 @@ export function useTypeNadContract() {
     getDuel,
     getPlayerActiveSession,
     getDuelCounter,
+    getCancelFeeBps,
 
     // Write functions
     startGame,
@@ -454,6 +564,8 @@ export function useTypeNadContract() {
     createDuel,
     joinDuel,
     settleDuel,
+    cancelGame,
+    cancelDuel,
 
     // Event watchers
     watchDuelCreated,
@@ -465,3 +577,4 @@ export function useTypeNadContract() {
     publicClient,
   };
 }
+

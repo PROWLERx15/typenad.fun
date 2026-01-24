@@ -50,6 +50,7 @@ const PVPModeScreen: React.FC<PVPModeScreenProps> = ({
     joinDuel,
     getDuel,
     getDuelCounter,
+    cancelDuel,
     watchDuelCreated,
     watchDuelJoined,
     isLoading: contractLoading,
@@ -73,6 +74,7 @@ const PVPModeScreen: React.FC<PVPModeScreenProps> = ({
   const [joinDuelId, setJoinDuelId] = useState('');
   const [createdDuelId, setCreatedDuelId] = useState<bigint | null>(null);
   const [waitingForOpponent, setWaitingForOpponent] = useState(false);
+  const [isCancellingDuel, setIsCancellingDuel] = useState(false);
 
   // Fetch balance and open duels
   useEffect(() => {
@@ -247,7 +249,37 @@ const PVPModeScreen: React.FC<PVPModeScreenProps> = ({
     }
   };
 
-  const isLoading = contractLoading || usdcLoading;
+  const handleCancelDuel = async () => {
+    if (!createdDuelId) return;
+
+    setIsCancellingDuel(true);
+    setError('');
+    setStatus('Cancelling duel...');
+
+    try {
+      const { refund } = await cancelDuel(createdDuelId);
+      setStatus(`Duel cancelled! Refund: ${formatUSDC(refund)} USDC`);
+      setWaitingForOpponent(false);
+      setCreatedDuelId(null);
+
+      // Remove from open duels list
+      setOpenDuels((prev) => prev.filter((d) => d.duelId !== createdDuelId));
+
+      // Return to lobby after short delay
+      setTimeout(() => {
+        setView('lobby');
+        setStatus('');
+      }, 2000);
+    } catch (err: any) {
+      console.error('Failed to cancel duel:', err);
+      setError(err.message || 'Failed to cancel duel');
+      setStatus('');
+    } finally {
+      setIsCancellingDuel(false);
+    }
+  };
+
+  const isLoading = contractLoading || usdcLoading || isCancellingDuel;
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -362,20 +394,39 @@ const PVPModeScreen: React.FC<PVPModeScreenProps> = ({
             {waitingForOpponent ? (
               <div style={{ textAlign: 'center' }}>
                 <p style={{ color: '#8B5CF6', fontSize: '14px', marginBottom: '12px' }}>{status}</p>
-                <p style={{ color: '#888', fontSize: '11px' }}>
-                  Share Duel ID: <span style={{ color: '#fff' }}>#{createdDuelId?.toString()}</span>
+                <div style={{ marginBottom: '20px' }}>
+                  <img
+                    src="/images/loading-spinner.gif"
+                    alt="Waiting..."
+                    style={{ width: '40px', height: '40px', opacity: 0.7 }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+                <p style={{ color: '#888', fontSize: '11px', marginBottom: '20px' }}>
+                  Share Duel ID: <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>#{createdDuelId?.toString()}</span>
                 </p>
+
+                <div style={{ padding: '12px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', marginBottom: '12px' }}>
+                  <p style={{ color: '#ef4444', fontSize: '10px', marginBottom: '4px' }}>Want to cancel?</p>
+                  <p style={{ color: '#aaa', fontSize: '10px' }}>
+                    You will receive a refund minus a 5% cancellation fee.
+                  </p>
+                </div>
+
                 <button
-                  onClick={() => {
-                    setWaitingForOpponent(false);
-                    setCreatedDuelId(null);
-                    setStatus('');
-                    setView('lobby');
-                  }}
+                  onClick={handleCancelDuel}
+                  disabled={isLoading}
                   className={styles.button}
-                  style={{ marginTop: '20px' }}
+                  style={{
+                    marginTop: '8px',
+                    backgroundColor: isLoading ? '#555' : 'transparent',
+                    border: '1px solid #ef4444',
+                    color: '#ef4444'
+                  }}
                 >
-                  Cancel
+                  {isCancellingDuel ? 'Cancelling...' : 'Cancel Duel & Refund'}
                 </button>
               </div>
             ) : (

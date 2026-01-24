@@ -52,6 +52,18 @@ export interface DuelSettledEvent {
   payout: bigint;
 }
 
+export interface GameCancelledEvent {
+  sequenceNumber: bigint;
+  player: `0x${string}`;
+  refund: bigint;
+}
+
+export interface DuelCancelledEvent {
+  duelId: bigint;
+  player1: `0x${string}`;
+  refund: bigint;
+}
+
 // API types
 export interface SettleGameRequest {
   sequenceNumber: string;

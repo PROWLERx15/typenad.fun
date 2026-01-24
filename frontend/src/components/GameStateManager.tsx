@@ -186,7 +186,28 @@ const GameStateManager: React.FC = () => {
         if (bestWpm > savedBestWpm) {
             localStorage.setItem('personal_best_wpm', bestWpm.toString());
         }
+
+        // Clear session storage on game over for staked games
+        if (gameMode === 'staked' || gameMode === 'duel') {
+            localStorage.removeItem('typemonad_staked_session');
+            localStorage.removeItem('typemonad_duel_session');
+        }
     };
+
+    // Warn user before closing tab during staked game
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (gameState === 'playing' && (gameMode === 'staked' || gameMode === 'duel')) {
+                e.preventDefault();
+                // Modern browsers require returnValue to be set
+                e.returnValue = 'You have an active staked game. If you leave, you may lose your stake. Are you sure?';
+                return e.returnValue;
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [gameState, gameMode]);
 
     const saveScoreToSupabase = async (walletAddress: string, score: number, wave: number, wpm: number, mode: string, kills: number) => {
         try {
@@ -532,9 +553,9 @@ const GameStateManager: React.FC = () => {
                                     }}>
                                         Powered by
                                     </div>
-                                    <img 
-                                        src="/images/monad-logo.png" 
-                                        alt="Monad" 
+                                    <img
+                                        src="/images/monad-logo.png"
+                                        alt="Monad"
                                         style={{
                                             width: '120px',
                                             height: 'auto',
