@@ -11,7 +11,7 @@ export const monadTestnet: Chain = {
         symbol: 'MON',
     },
     rpcUrls: {
-        default: { http: ['https://testnet-rpc.monad.xyz'] },
+        default: { http: [process.env.NEXT_PUBLIC_MONAD_RPC_TESTNET || 'https://testnet-rpc.monad.xyz'] },
     },
     blockExplorers: {
         default: { name: 'MonadScan', url: 'https://testnet.monadexplorer.com' },

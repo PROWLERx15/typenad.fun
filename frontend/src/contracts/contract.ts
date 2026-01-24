@@ -1,4 +1,4 @@
-export const TYPE_NAD_CONTRACT_ADDRESS = "0xe2d8cDF98F611Df9D87861130B4C19Da45b4b455";
+export const TYPE_NAD_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_TYPE_NAD_CONTRACT_ADDRESS || "";
 export const TYPE_NAD_ABI = [
   {
     "type": "constructor",
@@ -453,6 +453,45 @@ export const TYPE_NAD_ABI = [
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isFallbackMode",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "useFallbackRandomness",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "setFallbackMode",
+    "inputs": [
+      {
+        "name": "enabled",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",

@@ -57,21 +57,55 @@ export function useTypeNadContract() {
 
   // ============= READ FUNCTIONS =============
 
-  const getEntropyFee = useCallback(async (): Promise<bigint> => {
+  // Check if fallback mode is enabled (uses pseudo-random, no entropy fee needed)
+  const isFallbackMode = useCallback(async (): Promise<boolean> => {
     try {
+      const result = await publicClient.readContract({
+        address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
+        abi: TYPE_NAD_ABI,
+        functionName: 'isFallbackMode',
+      });
+      return result as boolean;
+    } catch {
+      // If we can't check fallback mode, assume it's not enabled
+      return false;
+    }
+  }, [publicClient]);
+
+  const getEntropyFee = useCallback(async (): Promise<bigint> => {
+    // Default fee as fallback (0.001 MON = 10^15 wei) - safe for most cases
+    const DEFAULT_ENTROPY_FEE = BigInt('1000000000000000');
+
+    try {
+      // First check if fallback mode is enabled - if so, no fee needed
+      const fallbackEnabled = await isFallbackMode();
+      if (fallbackEnabled) {
+        console.log('Fallback mode is enabled, no entropy fee needed');
+        return 0n;
+      }
+
+      // Try to get the actual fee from the contract
       const fee = await publicClient.readContract({
         address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
         abi: TYPE_NAD_ABI,
         functionName: 'getEntropyFee',
       });
-      return fee as bigint;
+      const feeValue = fee as bigint;
+
+      // If contract returns 0 but we're not in fallback mode, use default
+      if (feeValue === 0n) {
+        console.log('Contract returned 0 fee but not in fallback mode, using default');
+        return DEFAULT_ENTROPY_FEE;
+      }
+
+      return feeValue;
     } catch (err) {
-      console.error('Failed to fetch entropy fee:', err);
-      // Return a default fee if the call fails (approximately 0.0001 MON in wei)
-      // This is a reasonable fallback for testnet
-      return BigInt('100000000000000'); // 0.0001 MON = 10^14 wei
+      // If the call fails, use a default fee to be safe
+      // This prevents "Transaction fee too low" errors
+      console.warn('Failed to fetch entropy fee, using default:', err);
+      return DEFAULT_ENTROPY_FEE;
     }
-  }, [publicClient]);
+  }, [publicClient, isFallbackMode]);
 
   const getUSDCAddress = useCallback(async (): Promise<`0x${string}`> => {
     const usdcAddress = await publicClient.readContract({
@@ -533,6 +567,7 @@ export function useTypeNadContract() {
     getDuel,
     getPlayerActiveSession,
     getDuelCounter,
+    isFallbackMode,
 
     // Write functions
     startGame,

@@ -6,8 +6,8 @@ import { usePrivyWallet } from './usePrivyWallet';
 import { monadTestnet } from '../config/privy';
 import { TYPE_NAD_CONTRACT_ADDRESS } from '../contracts/contract';
 
-// USDC contract address on Monad Testnet
-export const USDC_ADDRESS = (process.env.NEXT_PUBLIC_USDC_ADDRESS || '0x534b2f3A21130d7a60830c2Df862319e593943A3') as const;
+// USDC contract address on Monad Testnet (from env)
+export const USDC_ADDRESS = (process.env.NEXT_PUBLIC_USDC_ADDRESS || '') as `0x${string}`;
 
 // USDC has 6 decimals
 export const USDC_DECIMALS = 6;

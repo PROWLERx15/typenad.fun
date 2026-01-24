@@ -8,8 +8,8 @@ import { monadTestnet } from '../../config/privy';
 import { USDC_ADDRESS, USDC_DECIMALS } from '../../hooks/useUSDC';
 import styles from './WalletWidget.module.css';
 
-// RPC URL
-const RPC_URL = process.env.MONAD_RPC_TESTNET || 'https://testnet-rpc.monad.xyz';
+// RPC URL (from env)
+const RPC_URL = process.env.NEXT_PUBLIC_MONAD_RPC_TESTNET || 'https://testnet-rpc.monad.xyz';
 
 type TabMode = 'receive' | 'send';
 type TokenType = 'MON' | 'USDC';
