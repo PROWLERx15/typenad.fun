@@ -35,14 +35,18 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
   // Bonus is wpm * 1000 (0.001 USDC per WPM)
   const bonusAmount = BigInt(Math.floor(wpm * 1000));
 
+  // Penalty constants
+  const FREE_MISSES = BigInt(10);
+  const FREE_TYPOS = BigInt(7);
+  const PENALTY_AMOUNT = BigInt(100_000); // 0.1 USDC
+
   // Estimate payout (frontend estimation for display)
   const estimatePayout = () => {
-    const FREE_MISSES = BigInt(10);
-    const PENALTY_AMOUNT = BigInt(100_000); // 0.1 USDC
     const PLATFORM_FEE_BPS = BigInt(1000); // 10%
 
     const penalizedMisses = BigInt(missCount) > FREE_MISSES ? BigInt(missCount) - FREE_MISSES : BigInt(0);
-    const totalPenalty = penalizedMisses * PENALTY_AMOUNT;
+    const penalizedTypos = BigInt(typoCount) > FREE_TYPOS ? BigInt(typoCount) - FREE_TYPOS : BigInt(0);
+    const totalPenalty = (penalizedMisses * PENALTY_AMOUNT) + (penalizedTypos * PENALTY_AMOUNT);
     const grossPayout = stakeAmount + bonusAmount > totalPenalty ? stakeAmount + bonusAmount - totalPenalty : BigInt(0);
     const platformFee = (grossPayout * PLATFORM_FEE_BPS) / BigInt(10000);
     const netPayout = grossPayout - platformFee;
@@ -179,11 +183,12 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
   const estimatedPayout = estimatePayout();
   const isProfit = estimatedPayout > stakeAmount;
 
-  // Calculate slashed amount for display
-  const FREE_MISSES = BigInt(10);
-  const PENALTY_AMOUNT = BigInt(100_000); // 0.1 USDC
+  // Calculate penalties for display
   const penalizedMisses = BigInt(missCount) > FREE_MISSES ? BigInt(missCount) - FREE_MISSES : BigInt(0);
-  const slashedAmount = penalizedMisses * PENALTY_AMOUNT;
+  const penalizedTypos = BigInt(typoCount) > FREE_TYPOS ? BigInt(typoCount) - FREE_TYPOS : BigInt(0);
+  const missDeduction = penalizedMisses * PENALTY_AMOUNT;
+  const typoDeduction = penalizedTypos * PENALTY_AMOUNT;
+  const totalSlashed = missDeduction + typoDeduction;
 
   return (
     <ResultCard
@@ -193,7 +198,9 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
       typoCount={typoCount}
       stakeAmount={stakeAmount}
       bonusAmount={bonusAmount}
-      slashedAmount={slashedAmount}
+      missDeduction={missDeduction}
+      typoDeduction={typoDeduction}
+      totalSlashed={totalSlashed}
       finalPayout={payout}
       txHash={txHash}
       status={status}
