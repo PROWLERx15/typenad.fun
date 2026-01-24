@@ -146,10 +146,10 @@ export type StakeOption = (typeof STAKE_OPTIONS)[number];
 
 // Contract addresses from environment
 export const CONTRACTS = {
-  TYPE_NAD: '0xe2d8cDF98F611Df9D87861130B4C19Da45b4b455' as const,
-  USDC: '0x534b2f3A21130d7a60830c2Df862319e593943A3' as const,
-  ENTROPY: '0x36825bf3Fbdf5a29E2d5148bfe7Dcf7B5639e320' as const,
-  VERIFIER: '0xd190944633a34CF679669FA2fA6204cfff4038B6' as const,
+  TYPE_NAD: (process.env.NEXT_PUBLIC_TYPE_NAD_CONTRACT_ADDRESS || '') as `0x${string}`,
+  USDC: (process.env.NEXT_PUBLIC_USDC_ADDRESS || '') as `0x${string}`,
+  ENTROPY: (process.env.NEXT_PUBLIC_ENTROPY_ADDRESS || '') as `0x${string}`,
+  VERIFIER: (process.env.VERIFIER_ADDRESS || '') as `0x${string}`,
 } as const;
 
 // Chain configuration
@@ -163,10 +163,10 @@ export const MONAD_TESTNET = {
   },
   rpcUrls: {
     default: {
-      http: ['https://testnet-rpc.monad.xyz'],
+      http: [process.env.NEXT_PUBLIC_MONAD_RPC_TESTNET || 'https://testnet-rpc.monad.xyz'],
     },
     alchemy: {
-      http: ['https://monad-testnet.g.alchemy.com/v2/LfKXerIDAvp3ToDzzjfD8'],
+      http: [process.env.NEXT_PUBLIC_MONAD_RPC_TESTNET || 'https://testnet-rpc.monad.xyz'],
     },
   },
   blockExplorers: {
