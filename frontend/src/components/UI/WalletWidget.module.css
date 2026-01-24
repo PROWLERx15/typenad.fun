@@ -130,6 +130,46 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
+   TAB BUTTONS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.tabContainer {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.tabButton {
+  flex: 1;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: rgba(139, 92, 246, 0.6);
+  background: transparent;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 6px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 1px;
+}
+
+.tabButton:hover {
+  color: #A78BFA;
+  border-color: rgba(139, 92, 246, 0.5);
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.tabButtonActive {
+  color: #8B5CF6;
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.6);
+  box-shadow: 
+    0 0 15px rgba(139, 92, 246, 0.3),
+    inset 0 0 10px rgba(139, 92, 246, 0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
    ADDRESS SECTION
    ═══════════════════════════════════════════════════════════════════════════════ */
 .addressSection {
@@ -332,4 +372,118 @@
   .tokenBalance {
     font-size: 12px;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SEND SECTION
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.sendSection {
+  margin-bottom: 24px;
+}
+
+.formGroup {
+  margin-bottom: 20px;
+}
+
+.formLabel {
+  display: block;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: rgba(139, 92, 246, 0.7);
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+
+.formInput,
+.formSelect {
+  width: 100%;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #A78BFA;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 6px;
+  padding: 12px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.formInput:focus,
+.formSelect:focus {
+  outline: none;
+  border-color: rgba(139, 92, 246, 0.6);
+  background: rgba(139, 92, 246, 0.15);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+}
+
+.formInput:disabled,
+.formSelect:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.formInput::placeholder {
+  color: rgba(139, 92, 246, 0.4);
+}
+
+.balanceHint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: rgba(139, 92, 246, 0.5);
+  margin-top: 6px;
+  text-align: right;
+}
+
+.sendButton {
+  width: 100%;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: #8B5CF6;
+  background: rgba(139, 92, 246, 0.2);
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  border-radius: 8px;
+  padding: 14px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 1px;
+  margin-top: 8px;
+}
+
+.sendButton:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.3);
+  border-color: rgba(139, 92, 246, 0.7);
+  box-shadow: 
+    0 0 20px rgba(139, 92, 246, 0.4),
+    inset 0 0 15px rgba(139, 92, 246, 0.15);
+  transform: translateY(-1px);
+}
+
+.sendButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sendError {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #FF4444;
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.sendSuccess {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #00FF88;
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  text-align: center;
+  word-break: break-all;
 }
