@@ -722,7 +722,7 @@ const GameStateManager: React.FC = () => {
             })()}
 
             {/* Debug Panel - only visible when connected */}
-            {isConnected && <DebugPanel />}
+            {/* {isConnected && <DebugPanel />} */}
         </>
     );
 };
