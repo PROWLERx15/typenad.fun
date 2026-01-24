@@ -396,17 +396,18 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
         if (typing) {
             setIsTyping(prev => !prev);
 
-            // Track typos for staked/duel modes: a typo is when the new input doesn't match any enemy
-            if ((gameMode === 'staked' || gameMode === 'duel') && input.length > 0) {
+            // Track typos for all modes
+            if (input.length > 0) {
                 const hasMatchingEnemy = enemies.some((e) => e.word.startsWith(input));
-                if (!hasMatchingEnemy && prevInputLengthRef.current > 0) {
-                    // Only count as typo if we were already targeting something
-                    const prevMatched = enemies.some((e) => e.word.startsWith(playerInput));
-                    if (prevMatched) {
-                        totalTyposRef.current += 1;
-                        setTotalTypos(totalTyposRef.current);
-                        onTypoUpdate?.(totalTyposRef.current);
-                    }
+                if (!hasMatchingEnemy) {
+                    // Count as typo if the input doesn't match any enemy
+                    // This includes:
+                    // 1. Starting to type a wrong word (first char mismatch)
+                    // 2. Continuing to type wrong characters (subsequent mismatches)
+                    // 3. Breaking a valid sequence
+                    totalTyposRef.current += 1;
+                    setTotalTypos(totalTyposRef.current);
+                    onTypoUpdate?.(totalTyposRef.current);
                 }
             }
         }
