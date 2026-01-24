@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { keccak256, encodePacked, isAddress } from 'viem';
+import { keccak256, encodePacked, isAddress, createWalletClient, createPublicClient, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
+import { monadTestnet } from '../../../config/privy';
+import { TYPE_NAD_ABI, TYPE_NAD_CONTRACT_ADDRESS } from '../../../contracts/contract';
 
 interface PlayerScore {
   address: string;
@@ -42,10 +44,9 @@ function determineWinner(player1: PlayerScore, player2: PlayerScore): string {
 /**
  * POST /api/settle-duel
  * 
- * Determines the winner and signs a PvP duel settlement message.
- * The signature is used to call settleDuel() on the contract.
+ * Determines the winner and settles the duel using the admin wallet (paying gas).
  * 
- * Message format (must match contract):
+ * Message format for signature (must match contract):
  * keccak256(abi.encodePacked(duelId, winner, "DUEL_WINNER"))
  */
 export async function POST(request: NextRequest) {
@@ -61,8 +62,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Ensure private key has 0x prefix
-    const formattedPrivateKey = privateKey.startsWith('0x') 
-      ? privateKey as `0x${string}` 
+    const formattedPrivateKey = privateKey.startsWith('0x')
+      ? privateKey as `0x${string}`
       : `0x${privateKey}` as `0x${string}`;
 
     // 2. Parse request body
@@ -144,11 +145,38 @@ export async function POST(request: NextRequest) {
       signerAddress: account.address,
     });
 
-    // 8. Return winner and signature
+    // 8. Execute transaction on-chain via Admin Wallet
+    const walletClient = createWalletClient({
+      account,
+      chain: monadTestnet,
+      transport: http(process.env.NEXT_PUBLIC_MONAD_RPC_TESTNET || 'https://testnet-rpc.monad.xyz'),
+    });
+
+    const publicClient = createPublicClient({
+      chain: monadTestnet,
+      transport: http(process.env.NEXT_PUBLIC_MONAD_RPC_TESTNET || 'https://testnet-rpc.monad.xyz'),
+    });
+
+    console.log('[settle-duel] sending transaction...');
+
+    // Call settleDuel(uint256 duelId, address winner, bytes signature)
+    const hash = await walletClient.writeContract({
+      address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
+      abi: TYPE_NAD_ABI,
+      functionName: 'settleDuel',
+      args: [BigInt(duelId), winnerAddress as `0x${string}`, signature],
+    });
+
+    console.log('[settle-duel] Transaction sent:', hash);
+
+    // Optional: wait for confirmation if you want to be sure before returning
+    // await publicClient.waitForTransactionReceipt({ hash });
+
+    // 9. Return winner and txHash
     return NextResponse.json({
       success: true,
       winner: winnerAddress,
-      signature,
+      txHash: hash,
       scores: { player1, player2 },
     });
   } catch (error) {

@@ -42,8 +42,8 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
   onBackToMenu,
 }) => {
   const { address } = usePrivyWallet();
-  const { settleDuel, getDuel, getDuelResult } = useTypeNadContract();
-  const [status, setStatus] = useState<'submitting' | 'waiting' | 'signing' | 'settling' | 'settled' | 'error'>('submitting');
+  const { getDuel } = useTypeNadContract();
+  const [status, setStatus] = useState<'submitting' | 'waiting' | 'settling' | 'settled' | 'error'>('submitting');
   const [error, setError] = useState<string>('');
   const [payout, setPayout] = useState<bigint | null>(null);
   const [txHash, setTxHash] = useState<string>('');
@@ -197,127 +197,107 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
     };
   }, [address, opponentAddress, duelId, waitingForOpponent, handleOpponentResults]);
 
-  // Auto-settle when winner is determined
+  // Trigger backend settlement when both players finish
   useEffect(() => {
     if (winner && status === 'waiting') {
-      handleSettle();
+      triggerBackendSettlement();
     }
   }, [winner, status]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSettle = async () => {
-    if (!winner || !address || !opponentAddress) return;
+  // Poll for settlement status
+  useEffect(() => {
+    if (status !== 'settling') return;
 
-    setStatus('signing');
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/settlement-status?duelId=${duelId.toString()}`);
+        if (!response.ok) {
+          console.error('[DuelGameOver] Failed to fetch settlement status');
+          return;
+        }
+
+        const data = await response.json();
+        
+        if (data.status === 'settled') {
+          // Settlement complete!
+          clearInterval(pollInterval);
+          setPayout(BigInt(data.payout || '0'));
+          setTxHash(data.txHash || '');
+          setWinner(data.winner.toLowerCase() === address?.toLowerCase() ? 'you' : 'opponent');
+          setStatus('settled');
+        } else if (data.status === 'error') {
+          clearInterval(pollInterval);
+          setError(data.error || 'Settlement failed');
+          setStatus('error');
+        }
+      } catch (err) {
+        console.error('[DuelGameOver] Error polling settlement status:', err);
+      }
+    }, 2000); // Poll every 2 seconds
+
+    // Timeout after 60 seconds
+    const timeout = setTimeout(() => {
+      clearInterval(pollInterval);
+      if (status === 'settling') {
+        setError('Settlement timeout - please check transaction manually');
+        setStatus('error');
+      }
+    }, 60000);
+
+    return () => {
+      clearInterval(pollInterval);
+      clearTimeout(timeout);
+    };
+  }, [status, duelId, address]);
+
+  const triggerBackendSettlement = async () => {
+    if (!winner || !address) return;
+
+    setStatus('settling');
     setError('');
 
     try {
-      // 1. Check if duel is already settled on-chain (Race Condition Check)
-      const duelState = await getDuel(duelId);
-      if (!duelState.active) {
-        console.log('[DuelSettlement] Duel already inactive, fetching past result...');
-        const pastResult = await getDuelResult(duelId);
-        if (pastResult) {
-          setPayout(pastResult.payout);
-          // Retrieve winner from past result
-          setWinner(pastResult.winner.toLowerCase() === address.toLowerCase() ? 'you' : 'opponent');
-          setStatus('settled');
-          // Clean up DB
-          await supabase.from('duel_results').delete().eq('duel_id', duelId.toString());
-          return;
-        }
-      }
+      console.log('[DuelGameOver] Triggering backend settlement', {
+        duelId: duelId.toString(),
+      });
 
-      // 2. Prepare player data for API
-      const myPlayerData = {
-        address: address,
-        score,
-        misses: missCount,
-        typos: typoCount,
-        wpm,
-      };
-
-      const opponentPlayerData = {
-        address: opponentAddress,
-        score: opponentScore,
-        misses: opponentMisses,
-        typos: opponentTypos,
-        wpm: opponentWpm,
-      };
-
-      // Player1 is always creator, player2 is joiner
-      const player1Data = isCreator ? myPlayerData : opponentPlayerData;
-      const player2Data = isCreator ? opponentPlayerData : myPlayerData;
-
-      // 3. Call backend to determine winner and get signature
-      const response = await fetch('/api/settle-duel', {
+      // Call backend to execute settlement (backend pays gas, no wallet approval needed!)
+      const response = await fetch('/api/execute-settlement', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           duelId: duelId.toString(),
-          player1: player1Data,
-          player2: player2Data,
         }),
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to get signature');
+        throw new Error(data.error || 'Failed to trigger settlement');
       }
 
-      const { signature, winner: winnerAddress } = await response.json();
+      const result = await response.json();
 
-      setStatus('settling');
-
-      // 4. Call contract to settle
-      try {
-        const result = await settleDuel(duelId, winnerAddress as `0x${string}`, signature as `0x${string}`);
-        setPayout(result.payout);
-        setTxHash(result.hash);
+      if (result.success) {
+        // Settlement executed successfully
+        setPayout(BigInt(result.payout || '0'));
+        setTxHash(result.txHash || '');
+        setWinner(result.winner.toLowerCase() === address.toLowerCase() ? 'you' : 'opponent');
         setStatus('settled');
-      } catch (contractErr: any) {
-        // 5. Handle "DuelAlreadySettled" race condition during transaction
-        console.error('[DuelSettlement] Contract call failed:', contractErr);
-        const errorMessage = contractErr.message || JSON.stringify(contractErr);
-
-        if (errorMessage.includes('DuelAlreadySettled') || errorMessage.includes('revert')) {
-          console.log('[DuelSettlement] Transaction reverted (likely race condition). Fetching event logs...');
-          // Verify if it was indeed settled just now
-          const pastResult = await getDuelResult(duelId);
-          if (pastResult) {
-            setPayout(pastResult.payout);
-            setWinner(pastResult.winner.toLowerCase() === address.toLowerCase() ? 'you' : 'opponent');
-            setStatus('settled');
-            await supabase.from('duel_results').delete().eq('duel_id', duelId.toString());
-            return;
-          }
-        }
-        throw contractErr; // Rethrow real errors
+      } else {
+        throw new Error(result.error || 'Settlement failed');
       }
-
-      // Clean up duel results from database
-      await supabase
-        .from('duel_results')
-        .delete()
-        .eq('duel_id', duelId.toString());
 
     } catch (err: unknown) {
-      console.error('Duel settlement failed:', err);
-      // Final fallback check
-      try {
-        const pastResult = await getDuelResult(duelId);
-        if (pastResult) {
-          setPayout(pastResult.payout);
-          setWinner(pastResult.winner.toLowerCase() === address.toLowerCase() ? 'you' : 'opponent');
-          setStatus('settled');
-          return;
-        }
-      } catch (e) {
-        // ignore
-      }
-
-      setError(err instanceof Error ? err.message : 'Failed to settle duel');
+      console.error('[DuelGameOver] Settlement trigger failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to trigger settlement');
       setStatus('error');
     }
+  };
+
+  const handleRetrySettlement = async () => {
+    setError('');
+    setStatus('settling');
+    await triggerBackendSettlement();
   };
 
   const totalPot = stakeAmount * 2n;
@@ -410,15 +390,9 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
           </p>
         )}
 
-        {status === 'signing' && (
-          <p style={{ color: '#8B5CF6', fontSize: '12px', marginBottom: '16px' }}>
-            Getting signature from server...
-          </p>
-        )}
-
         {status === 'settling' && (
           <p style={{ color: '#8B5CF6', fontSize: '12px', marginBottom: '16px' }}>
-            Confirming transaction on chain...
+            Settlement in progress (no approval needed)...
           </p>
         )}
 
@@ -451,7 +425,7 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
           <div style={{ marginBottom: '16px' }}>
             <p style={{ color: '#ef4444', fontSize: '12px', marginBottom: '8px' }}>{error}</p>
             <button
-              onClick={handleSettle}
+              onClick={handleRetrySettlement}
               style={{
                 padding: '8px 16px',
                 backgroundColor: '#8B5CF6',
