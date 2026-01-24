@@ -12,8 +12,7 @@ import {
     setEquippedPowerups,
     STORAGE_KEYS
 } from '../../constants/gameStats';
-import { supabaseUntyped as supabase } from '../../lib/supabaseClient';
-import { ensureUserExists } from '../../utils/supabaseHelpers';
+
 
 interface ShopScreenProps {
     onClose: () => void;
@@ -27,18 +26,21 @@ interface ShopItem {
     id: string;
     name: string;
     description: string;
-    price: number;
-    icon: string;
+    gold_price: number;
+    image_url: string;
     available: boolean;
+    category: string;
+    metadata?: Record<string, any>;
 }
 
-const SHOP_ITEMS: ShopItem[] = [
-    { id: 'double-gold', name: 'Double Credits', description: 'Earn 2x credits for one game', price: 100, icon: '/images/gold-coin.png', available: true },
-    { id: 'triple-gold', name: 'Triple Credits', description: 'Earn 3x credits for one game', price: 200, icon: '/images/gold-coin.png', available: true },
-    { id: 'double-points', name: 'Double Points', description: 'Double your score for one game', price: 100, icon: '/images/double-points.png', available: true },
-    { id: 'triple-points', name: 'Triple Points', description: 'Triple your score for one game', price: 200, icon: '/images/triple-points.png', available: true },
-    { id: 'extra-life', name: 'Extra Shield', description: 'Start with 4 shields instead of 3', price: 150, icon: '/images/heart.png', available: true },
-    { id: 'slow-enemies', name: 'Slow Motion', description: 'Enemies move 50% slower', price: 200, icon: '/images/slow-enemies.png', available: true },
+// Fallback items if API fails
+const FALLBACK_SHOP_ITEMS: ShopItem[] = [
+    { id: 'double-gold', name: 'Double Credits', description: 'Earn 2x credits for one game', gold_price: 100, image_url: '/images/gold-coin.png', available: true, category: 'powerup' },
+    { id: 'triple-gold', name: 'Triple Credits', description: 'Earn 3x credits for one game', gold_price: 200, image_url: '/images/gold-coin.png', available: true, category: 'powerup' },
+    { id: 'double-points', name: 'Double Points', description: 'Double your score for one game', gold_price: 100, image_url: '/images/double-points.png', available: true, category: 'powerup' },
+    { id: 'triple-points', name: 'Triple Points', description: 'Triple your score for one game', gold_price: 200, image_url: '/images/triple-points.png', available: true, category: 'powerup' },
+    { id: 'extra-life', name: 'Extra Shield', description: 'Start with 4 shields instead of 3', gold_price: 150, image_url: '/images/heart.png', available: true, category: 'powerup' },
+    { id: 'slow-enemies', name: 'Slow Motion', description: 'Enemies move 50% slower', gold_price: 200, image_url: '/images/slow-enemies.png', available: true, category: 'powerup' },
 ];
 
 type TabType = 'shop' | 'inventory';
@@ -52,6 +54,28 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ onClose, totalGold = 0, onPurch
     const [purchasing, setPurchasing] = useState<string | null>(null);
     const [currentGold, setCurrentGold] = useState<number>(totalGold);
     const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+    const [shopItems, setShopItems] = useState<ShopItem[]>(FALLBACK_SHOP_ITEMS);
+    const [loadingItems, setLoadingItems] = useState(false);
+
+    // Fetch shop items from API
+    useEffect(() => {
+        const fetchShopItems = async () => {
+            setLoadingItems(true);
+            try {
+                const response = await fetch('/api/shop/items?category=powerup');
+                const data = await response.json();
+                if (data.success && data.data?.items?.length > 0) {
+                    setShopItems(data.data.items);
+                }
+            } catch (err) {
+                console.error('Failed to fetch shop items:', err);
+                // Keep fallback items
+            } finally {
+                setLoadingItems(false);
+            }
+        };
+        fetchShopItems();
+    }, []);
 
     // Initial load from local storage
     useEffect(() => {
@@ -63,51 +87,38 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ onClose, totalGold = 0, onPurch
         }
     }, []);
 
-    // Sync from Supabase
+    // Sync from API
     useEffect(() => {
-        const syncFromSupabase = async () => {
+        const syncFromAPI = async () => {
             if (!address) return;
 
             try {
-                // 1. Get User Gold
-                const { data: userData } = await supabase
-                    .from('users')
-                    .select('gold')
-                    .eq('wallet_address', address)
-                    .single();
+                // Fetch user inventory from API
+                const response = await fetch(`/api/user/inventory?walletAddress=${address}`);
+                const data = await response.json();
 
-                if (userData && (userData as any).gold !== undefined) {
-                    setCurrentGold((userData as any).gold);
-                    localStorage.setItem(STORAGE_KEYS.PLAYER_GOLD, (userData as any).gold.toString());
+                if (data.success && data.data?.inventory) {
+                    const newInventory: Record<string, number> = {};
+                    data.data.inventory.forEach((item: any) => {
+                        newInventory[item.item_id] = item.quantity;
+                    });
+                    setInventory(newInventory);
                 }
 
-                // 2. Get User Inventory
-                const { data: userDataId } = await supabase
-                    .from('users')
-                    .select('id')
-                    .eq('wallet_address', address)
-                    .single();
+                // Fetch user gold from profile API
+                const profileResponse = await fetch(`/api/user/profile?walletAddress=${address}`);
+                const profileData = await profileResponse.json();
 
-                if (userDataId) {
-                    const { data: inventoryData } = await supabase
-                        .from('user_inventory')
-                        .select('item_id, quantity')
-                        .eq('user_id', (userDataId as any).id);
-
-                    if (inventoryData) {
-                        const newInventory: Record<string, number> = {};
-                        inventoryData.forEach((item: { item_id: string; quantity: number }) => {
-                            newInventory[item.item_id] = item.quantity;
-                        });
-                        setInventory(newInventory);
-                    }
+                if (profileData.success && profileData.data?.stats?.gold !== undefined) {
+                    setCurrentGold(profileData.data.stats.gold);
+                    localStorage.setItem(STORAGE_KEYS.PLAYER_GOLD, profileData.data.stats.gold.toString());
                 }
             } catch (err) {
-                console.error('Failed to sync shop data from Supabase:', err);
+                console.error('Failed to sync shop data from API:', err);
             }
         };
 
-        syncFromSupabase();
+        syncFromAPI();
     }, [address]);
 
     useEffect(() => {
@@ -127,75 +138,55 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ onClose, totalGold = 0, onPurch
     };
 
     const handlePurchasePowerup = async (item: ShopItem) => {
-        if (purchasing || currentGold < item.price) {
-            if (currentGold < item.price) {
+        if (purchasing || currentGold < item.gold_price) {
+            if (currentGold < item.gold_price) {
                 showMessage('Not enough gold!', 'error');
             }
+            return;
+        }
+
+        if (!address) {
+            showMessage('Wallet not connected!', 'error');
             return;
         }
 
         setPurchasing(item.id);
 
         try {
-            // Optimistic update
-            const newGold = currentGold - item.price;
+            // Call purchase API endpoint
+            const response = await fetch('/api/shop/purchase', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    walletAddress: address,
+                    itemId: item.id,
+                    quantity: 1,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Purchase failed');
+            }
+
+            // Update local state with new gold balance
+            const newGold = data.data.remainingGold;
             setCurrentGold(newGold);
             localStorage.setItem(STORAGE_KEYS.PLAYER_GOLD, newGold.toString());
 
+            // Update local inventory
             addPowerupToInventory(item.id, 1);
             const newInventory = getPowerupInventory();
             setInventory(newInventory);
-
-            // Supabase update
-            if (address) {
-                // Get user data from Privy
-                const email = (user?.email?.address || user?.google?.email) || undefined;
-                const username = user?.google?.name || undefined;
-                const googleId = user?.google?.subject || undefined;
-
-                // 1. Get User ID
-                const userId = await ensureUserExists(supabase, address, {
-                    email: email ?? undefined,
-                    username,
-                    googleId
-                });
-
-                if (userId) {
-                    // 2. Update Gold
-                    await (supabase.from('users') as any)
-                        .update({ gold: newGold })
-                        .eq('id', userId);
-
-                    // 3. Update Inventory
-                    const { data: existingItem } = await supabase
-                        .from('user_inventory')
-                        .select('quantity')
-                        .eq('user_id', userId)
-                        .eq('item_id', item.id)
-                        .single();
-
-                    if (existingItem) {
-                        await (supabase.from('user_inventory') as any)
-                            .update({ quantity: (existingItem as any).quantity + 1 })
-                            .eq('user_id', userId)
-                            .eq('item_id', item.id);
-                    } else {
-                        await (supabase.from('user_inventory') as any)
-                            .insert({
-                                user_id: userId,
-                                item_id: item.id,
-                                quantity: 1
-                            });
-                    }
-                }
-            }
 
             showMessage(`Purchased ${item.name}!`, 'success');
             if (onPurchaseSuccess) onPurchaseSuccess();
         } catch (err) {
             console.error('Purchase failed:', err);
-            showMessage('Purchase failed. Check console.', 'error');
-            // Revert optimistic update (simplified)
+            showMessage(err instanceof Error ? err.message : 'Purchase failed', 'error');
+
+            // Refresh data from server to ensure consistency
             const storedGold = localStorage.getItem(STORAGE_KEYS.PLAYER_GOLD);
             if (storedGold) setCurrentGold(parseInt(storedGold));
         } finally {
@@ -230,7 +221,7 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ onClose, totalGold = 0, onPurch
     };
 
     const getItemById = (id: string): ShopItem | undefined => {
-        return SHOP_ITEMS.find(item => item.id === id);
+        return shopItems.find((item: ShopItem) => item.id === id) || FALLBACK_SHOP_ITEMS.find((item: ShopItem) => item.id === id);
     };
 
     const getTotalOwned = (powerupId: string): number => {
@@ -308,7 +299,7 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ onClose, totalGold = 0, onPurch
                                 if (!item) return null;
                                 return (
                                     <div key={id} style={styles.equippedItem}>
-                                        <img src={item.icon} alt={item.name} style={styles.equippedIcon} />
+                                        <img src={item.image_url} alt={item.name} style={styles.equippedIcon} />
                                         <span style={styles.equippedName}>{item.name}</span>
                                         <button
                                             onClick={() => handleEquip(id)}
@@ -329,9 +320,9 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ onClose, totalGold = 0, onPurch
                     <div style={styles.section}>
                         <h2 style={styles.sectionTitle}>Power Ups</h2>
                         <div style={styles.itemsGrid}>
-                            {SHOP_ITEMS.map((item) => {
+                            {shopItems.map((item: ShopItem) => {
                                 const owned = getTotalOwned(item.id);
-                                const canAfford = currentGold >= item.price;
+                                const canAfford = currentGold >= item.gold_price;
                                 const isPurchasing = purchasing === item.id;
 
                                 return (
@@ -342,13 +333,13 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ onClose, totalGold = 0, onPurch
                                             </div>
                                         )}
                                         <div style={styles.itemIcon}>
-                                            <img src={item.icon} alt={item.name} style={styles.itemIconImage} />
+                                            <img src={item.image_url} alt={item.name} style={styles.itemIconImage} />
                                         </div>
                                         <div style={styles.itemName}>{item.name}</div>
                                         <div style={styles.itemDescription}>{item.description}</div>
                                         <div style={styles.itemPrice}>
                                             <img src="/images/gold-coin.png" alt="Gold" style={styles.priceIcon} />
-                                            <span>{item.price}</span>
+                                            <span>{item.gold_price}</span>
                                         </div>
                                         <button
                                             style={mergeStyles(
@@ -393,7 +384,7 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ onClose, totalGold = 0, onPurch
                                                 ×{quantity}
                                             </div>
                                             <div style={styles.itemIcon}>
-                                                <img src={item.icon} alt={item.name} style={styles.itemIconImage} />
+                                                <img src={item.image_url} alt={item.name} style={styles.itemIconImage} />
                                             </div>
                                             <div style={styles.itemName}>{item.name}</div>
                                             <div style={styles.itemDescription}>{item.description}</div>

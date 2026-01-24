@@ -10,7 +10,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 /**
  * POST /api/duel/record
  * 
- * Records a completed duel match for history/leaderboard
+ * Records a completed duel match to the duel_matches table
  */
 export async function POST(request: NextRequest) {
   try {
@@ -58,11 +58,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Upsert duel match record
+    if (!txHash) {
+      return NextResponse.json(
+        { success: false, error: 'Transaction hash required' },
+        { status: 400 }
+      );
+    }
+
+    console.log('[duel/record] Recording duel match', {
+      duelId,
+      winner: winnerAddress,
+      player1Score,
+      player2Score,
+    });
+
+    // Insert or update duel match record
     const { data, error } = await supabase
       .from('duel_matches')
       .upsert({
-        duel_id: duelId.toString(),
+        duel_id: duelId,
         player1_address: player1Address.toLowerCase(),
         player2_address: player2Address.toLowerCase(),
         winner_address: winnerAddress.toLowerCase(),
@@ -72,21 +86,32 @@ export async function POST(request: NextRequest) {
         player2_score: player2Score || 0,
         player1_wpm: player1Wpm || 0,
         player2_wpm: player2Wpm || 0,
-        tx_hash: txHash || null,
+        tx_hash: txHash,
         settled_at: new Date().toISOString(),
       }, {
-        onConflict: 'duel_id'
+        onConflict: 'duel_id',
       })
-      .select()
+      .select('id')
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('[duel/record] Database error:', error);
+      return NextResponse.json(
+        { success: false, error: 'Failed to record duel match' },
+        { status: 500 }
+      );
+    }
 
-    console.log(`[duel/record] Recorded duel ${duelId}: winner=${winnerAddress}`);
+    console.log('[duel/record] Duel match recorded successfully', {
+      matchId: data.id,
+      duelId,
+    });
 
     return NextResponse.json({
       success: true,
-      data: { matchId: data.id },
+      data: {
+        matchId: data.id,
+      },
     });
   } catch (error) {
     console.error('[duel/record] Error:', error);
@@ -100,9 +125,9 @@ export async function POST(request: NextRequest) {
 /**
  * GET /api/duel/record
  * 
- * Gets duel match history
+ * Gets duel match history for a player
  * Query params:
- * - walletAddress: string (optional, filter by player)
+ * - walletAddress: string (required)
  * - limit: number (default 20)
  */
 export async function GET(request: NextRequest) {
@@ -111,27 +136,37 @@ export async function GET(request: NextRequest) {
     const walletAddress = searchParams.get('walletAddress');
     const limit = parseInt(searchParams.get('limit') || '20');
 
-    let query = supabase
-      .from('duel_matches')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
-    if (walletAddress && isAddress(walletAddress)) {
-      const addr = walletAddress.toLowerCase();
-      query = query.or(`player1_address.eq.${addr},player2_address.eq.${addr}`);
+    if (!walletAddress || !isAddress(walletAddress)) {
+      return NextResponse.json(
+        { success: false, error: 'Valid wallet address required' },
+        { status: 400 }
+      );
     }
 
-    const { data, error } = await query;
+    const lowerAddress = walletAddress.toLowerCase();
 
-    if (error) throw error;
+    // Get matches where user was either player1 or player2
+    const { data: matches, error } = await supabase
+      .from('duel_matches')
+      .select('*')
+      .or(`player1_address.eq.${lowerAddress},player2_address.eq.${lowerAddress}`)
+      .order('settled_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('[duel/record] GET error:', error);
+      return NextResponse.json(
+        { success: false, error: 'Failed to fetch duel history' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      data: { matches: data || [] },
+      data: { matches: matches || [] },
     });
   } catch (error) {
-    console.error('[duel/record] GET Error:', error);
+    console.error('[duel/record] GET error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

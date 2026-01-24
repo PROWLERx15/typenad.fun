@@ -393,7 +393,7 @@ export async function POST(request: NextRequest) {
       args: [duelIdBigInt],
     });
 
-    const [player1Address, player2Address] = duelState as [`0x${string}`, `0x${string}`, bigint, bigint, boolean];
+    const [player1Address, player2Address, stakeAmount] = duelState as [`0x${string}`, `0x${string}`, bigint, bigint, boolean];
 
     // Map results to player1 and player2
     const player1Result = results.find(
@@ -429,8 +429,46 @@ export async function POST(request: NextRequest) {
     // Execute settlement with retry logic
     const result = await executeSettlementWithRetry(duelIdBigInt, player1, player2);
 
-    // Clean up duel results from database after successful settlement
+    // Record match history and clean up
     if (result.success && !result.alreadySettled) {
+      // Record match to duel_matches table
+      try {
+        console.log('[execute-settlement] Recording duel match', {
+          duelId,
+          winner: result.winner,
+        });
+
+        const { error: recordError } = await supabase
+          .from('duel_matches')
+          .upsert({
+            duel_id: duelId,
+            player1_address: player1Result.player_address.toLowerCase(),
+            player2_address: player2Result.player_address.toLowerCase(),
+            winner_address: result.winner.toLowerCase(),
+            stake_amount: stakeAmount.toString(),
+            payout_amount: result.payout,
+            player1_score: player1Result.score,
+            player2_score: player2Result.score,
+            player1_wpm: player1Result.wpm,
+            player2_wpm: player2Result.wpm,
+            tx_hash: result.txHash,
+            settled_at: new Date().toISOString(),
+          }, {
+            onConflict: 'duel_id'
+          });
+
+        if (recordError) {
+          console.error('[execute-settlement] Failed to record match:', recordError);
+          // Don't fail settlement if recording fails
+        } else {
+          console.log('[execute-settlement] Match recorded successfully');
+        }
+      } catch (error) {
+        console.error('[execute-settlement] Error recording match:', error);
+        // Don't fail settlement if recording fails
+      }
+
+      // Clean up duel results from database
       await supabase
         .from('duel_results')
         .delete()

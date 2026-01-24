@@ -13,7 +13,9 @@ interface ResultCardProps {
   typoCount: number;
   stakeAmount: bigint;
   bonusAmount: bigint;
-  slashedAmount: bigint;
+  missDeduction: bigint;
+  typoDeduction: bigint;
+  totalSlashed: bigint;
   finalPayout: bigint | null;
   txHash: string;
   status: 'idle' | 'signing' | 'settling' | 'settled' | 'error';
@@ -31,7 +33,9 @@ const ResultCard: React.FC<ResultCardProps> = ({
   typoCount,
   stakeAmount,
   bonusAmount,
-  slashedAmount,
+  missDeduction,
+  typoDeduction,
+  totalSlashed,
   finalPayout,
   txHash,
   status,
@@ -94,10 +98,17 @@ const ResultCard: React.FC<ResultCardProps> = ({
                   </div>
                 )}
 
-                {slashedAmount > BigInt(0) && (
+                {missDeduction > BigInt(0) && (
                   <div className={`${styles.payoutRow} ${styles.penalty}`}>
-                    <span className={styles.payoutLabel}>Slashed (Penalties):</span>
-                    <span className={styles.payoutValue}>-{formatUSDC(slashedAmount)} USDC</span>
+                    <span className={styles.payoutLabel}>Miss Penalties:</span>
+                    <span className={styles.payoutValue}>-{formatUSDC(missDeduction)} USDC</span>
+                  </div>
+                )}
+
+                {typoDeduction > BigInt(0) && (
+                  <div className={`${styles.payoutRow} ${styles.penalty}`}>
+                    <span className={styles.payoutLabel}>Typo Penalties:</span>
+                    <span className={styles.payoutValue}>-{formatUSDC(typoDeduction)} USDC</span>
                   </div>
                 )}
 
@@ -223,7 +234,7 @@ const ResultCard: React.FC<ResultCardProps> = ({
             <span className={styles.footerText}>
               Staked: {formatUSDC(stakeAmount)} USDC • 
               Bonus: {formatUSDC(bonusAmount)} USDC • 
-              Slashed: {formatUSDC(slashedAmount)} USDC
+              Penalties: {formatUSDC(totalSlashed)} USDC
             </span>
           </div>
         )}

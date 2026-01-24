@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useSoundSettings } from '../../hooks/useSoundSettings';
 
 interface SoundManagerProps {
-  gameState: 'start' | 'playing' | 'gameOver' | 'pvp' | 'leaderboard' | 'crypt' | 'settings' | 'solo' | 'multiplayer' | 'shop';
+  gameState: 'start' | 'playing' | 'gameOver' | 'pvp' | 'leaderboard' | 'crypt' | 'settings' | 'solo' | 'multiplayer' | 'shop' | 'achievements' | 'profile';
 }
 
 const SoundManager: React.FC<SoundManagerProps> = ({ gameState }) => {
@@ -39,7 +39,7 @@ const SoundManager: React.FC<SoundManagerProps> = ({ gameState }) => {
     let desiredTrack = '';
     let trackToPlay: HTMLAudioElement | null = null;
 
-    if (gameState === 'start' || gameState === 'pvp' || gameState === 'leaderboard' || gameState === 'crypt' || gameState === 'settings' || gameState === 'solo' || gameState === 'multiplayer' || gameState === 'shop') {
+    if (gameState === 'start' || gameState === 'pvp' || gameState === 'leaderboard' || gameState === 'crypt' || gameState === 'settings' || gameState === 'solo' || gameState === 'multiplayer' || gameState === 'shop' || gameState === 'achievements' || gameState === 'profile') {
       desiredTrack = 'start';
       trackToPlay = startRef.current;
     } else if (gameState === 'playing') {

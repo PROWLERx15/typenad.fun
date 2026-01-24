@@ -340,20 +340,25 @@ export async function POST(request: NextRequest) {
     const sequenceNumberBigInt = BigInt(sequenceNumber);
     const bonusAmountBigInt = BigInt(bonusAmount || '0');
 
+    // Apply free typo limit (7 free typos before penalties)
+    const FREE_TYPOS = 7;
+    const penalizedTypos = Math.max(0, typos - FREE_TYPOS);
+
     console.log('[execute-game-settlement] Received request', {
       sequenceNumber,
       misses,
       typos,
+      penalizedTypos,
       bonusAmount: bonusAmount || '0',
       playerAddress,
       timestamp: new Date().toISOString(),
     });
 
-    // Execute settlement with retry logic
+    // Execute settlement with retry logic (pass penalizedTypos to contract)
     const result = await executeSettlementWithRetry(
       sequenceNumberBigInt,
       misses,
-      typos,
+      penalizedTypos,
       bonusAmountBigInt,
       playerAddress
     );

@@ -19,6 +19,7 @@ interface DuelResultCardProps {
   txHash: string;
   error: string;
   isWinner: boolean;
+  isProfit: boolean;
   waitingForOpponent: boolean;
   onRestart: () => void;
   onBackToMenu: () => void;
@@ -39,6 +40,7 @@ const DuelResultCard: React.FC<DuelResultCardProps> = ({
   txHash,
   error,
   isWinner,
+  isProfit,
   waitingForOpponent,
   onRestart,
   onBackToMenu,
@@ -172,7 +174,7 @@ const DuelResultCard: React.FC<DuelResultCardProps> = ({
                     {isWinner ? 'You Won:' : 'Result:'}
                   </span>
                   <div className={styles.finalPayoutValue}>
-                    <span className={isWinner ? styles.profit : styles.loss}>
+                    <span className={isProfit ? styles.profit : styles.loss}>
                       {isWinner ? `+${formatUSDC(payout || BigInt(0))} USDC` : 'Better luck next time!'}
                     </span>
                     {isWinner && payout && payout > BigInt(0) && (

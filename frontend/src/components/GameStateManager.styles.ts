@@ -194,4 +194,16 @@ export const styles = {
     alignItems: 'center',
     zIndex: 1002,
   }),
+
+  brandingContainer: {
+    position: 'absolute',
+    bottom: '20px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    zIndex: 1002,
+    pointerEvents: 'none',
+  } as CSSProperties,
 } as const;

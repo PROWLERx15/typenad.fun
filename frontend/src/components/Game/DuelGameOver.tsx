@@ -15,8 +15,14 @@ interface DuelGameOverProps {
   stakeAmount: bigint;
   isCreator: boolean;
   opponentAddress?: string;
+  kills?: number;
+  waveReached?: number;
+  duration?: number;
+  wordsTyped?: number;
+  goldEarned?: number;
   onRestart: () => void;
   onBackToMenu: () => void;
+  onAchievementsChecked?: () => void;
 }
 
 interface DuelResult {
@@ -37,8 +43,14 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
   stakeAmount,
   isCreator,
   opponentAddress: initialOpponentAddress,
+  kills = 0,
+  waveReached = 1,
+  duration = 0,
+  wordsTyped = 0,
+  goldEarned = 0,
   onRestart,
   onBackToMenu,
+  onAchievementsChecked,
 }) => {
   const { address } = usePrivyWallet();
   const { getDuel } = useTypeNadContract();
@@ -56,6 +68,61 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
   const [opponentTypos, setOpponentTypos] = useState<number>(0);
   const [waitingForOpponent, setWaitingForOpponent] = useState(true);
   const [ownResultSubmitted, setOwnResultSubmitted] = useState(false);
+
+  // Save score to database after settlement completes
+  useEffect(() => {
+    const saveScore = async () => {
+      if (status !== 'settled' || !address || !winner) {
+        return;
+      }
+      
+      try {
+        console.log('[DuelGameOver] Saving score to database', {
+          score,
+          wpm,
+          winner,
+          missCount,
+          typoCount,
+        });
+
+        const response = await fetch('/api/score/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            walletAddress: address,
+            score,
+            waveReached,
+            wpm,
+            kills,
+            gameMode: 'duel',
+            goldEarned,
+            misses: missCount,
+            typos: typoCount,
+            duration,
+            wordsTyped,
+            isStaked: false,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          console.error('[DuelGameOver] Failed to save score:', error);
+        } else {
+          const result = await response.json();
+          console.log('[DuelGameOver] Score saved successfully', result);
+          
+          // Check for achievements after successful score save
+          if (onAchievementsChecked) {
+            onAchievementsChecked();
+          }
+        }
+      } catch (error) {
+        console.error('[DuelGameOver] Error saving score:', error);
+      }
+    };
+    
+    saveScore();
+  }, [status, address, winner, score, wpm, missCount, typoCount]);
 
   // Fetch opponent address from contract if not provided
   useEffect(() => {
@@ -301,6 +368,9 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
 
   const totalPot = stakeAmount * 2n;
   const isWinner = winner === 'you';
+  
+  // Determine profit/loss based on actual payout vs stake
+  const isProfit = payout !== null && payout > stakeAmount;
 
   return (
     <DuelResultCard
@@ -317,6 +387,7 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
       txHash={txHash}
       error={error}
       isWinner={isWinner}
+      isProfit={isProfit}
       waitingForOpponent={waitingForOpponent}
       onRestart={onRestart}
       onBackToMenu={onBackToMenu}
