@@ -122,7 +122,7 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
                     }
 
                     // Update stats from database (source of truth)
-                    if (userData.total_games !== undefined) {
+                    if (user.total_games !== undefined) {
                         setOnlineStats({
                             totalGames: user.total_games || 0,
                             totalKills: user.total_kills || 0,
@@ -147,7 +147,7 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
 
                         // Update match history
                         const history: MatchHistoryEntry[] = scoresData
-                            .sort((a: { created_at: string }, b: { created_at: string }) => 
+                            .sort((a: { created_at: string }, b: { created_at: string }) =>
                                 new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                             .slice(0, 20)
                             .map((s: { score: number; wpm: number; kills?: number; wave_reached?: number; created_at: string }) => ({
@@ -174,7 +174,7 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
 
                     if (items) {
                         const newInventory: Record<string, number> = {};
-                        inventoryData.forEach((item: { item_id: string; quantity: number }) => {
+                        items.forEach((item: { item_id: string; quantity: number }) => {
                             newInventory[item.item_id] = item.quantity;
                         });
                         setInventory(newInventory);
