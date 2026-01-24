@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { usePrivyWallet } from './usePrivyWallet';
-import { supabase } from '../lib/supabaseClient';
+import { supabaseUntyped as supabase } from '../lib/supabaseClient';
 import { ensureUserExists } from '../utils/supabaseHelpers';
 
 export function useAuthSync() {
@@ -33,7 +33,8 @@ export function useAuthSync() {
                 const email = user?.email?.address || user?.google?.email;
                 const googleName = user?.google?.name;
                 const googleId = user?.google?.subject;
-                const profilePicture = user?.google?.picture;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const profilePicture = (user?.google as any)?.picture;
 
                 // Generate username from Google name or wallet address
                 const username = googleName || `Player ${address.slice(0, 6)}`;

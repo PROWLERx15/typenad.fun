@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabaseClient';
+import { supabaseUntyped as supabase } from '../lib/supabaseClient';
 import { 
     getPlayerStats, 
     getMatchHistory, 

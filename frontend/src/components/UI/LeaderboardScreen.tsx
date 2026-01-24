@@ -4,7 +4,7 @@ import React from 'react';
 import { BUTTON_STYLES, SCREEN_STYLES, mergeStyles } from '../../styles/theme';
 import Leaderboard from './Leaderboard';
 import { styles } from './LeaderboardScreen.styles';
-import { supabase } from '../../lib/supabaseClient';
+import { supabaseUntyped as supabase } from '../../lib/supabaseClient';
 
 interface LeaderboardScreenProps {
     onClose: () => void;

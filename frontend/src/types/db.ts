@@ -131,6 +131,41 @@ export interface Database {
                     unlocked_at?: string
                 }
             }
+            duel_results: {
+                Row: {
+                    id: string
+                    duel_id: string
+                    player_address: string
+                    score: number
+                    wpm: number
+                    misses: number
+                    typos: number
+                    submitted_at: string
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    duel_id: string
+                    player_address: string
+                    score?: number
+                    wpm?: number
+                    misses?: number
+                    typos?: number
+                    submitted_at?: string
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    duel_id?: string
+                    player_address?: string
+                    score?: number
+                    wpm?: number
+                    misses?: number
+                    typos?: number
+                    submitted_at?: string
+                    created_at?: string
+                }
+            }
         }
     }
 }

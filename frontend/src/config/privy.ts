@@ -1,10 +1,10 @@
 import { PrivyClientConfig } from '@privy-io/react-auth';
+import { type Chain } from 'viem';
 
-// Monad Testnet chain configuration
-export const monadTestnet = {
+// Monad Testnet chain configuration (viem compatible)
+export const monadTestnet: Chain = {
     id: 10143,
     name: 'Monad Testnet',
-    network: 'monad-testnet',
     nativeCurrency: {
         decimals: 18,
         name: 'MONAD',
@@ -12,7 +12,6 @@ export const monadTestnet = {
     },
     rpcUrls: {
         default: { http: ['https://testnet-rpc.monad.xyz'] },
-        public: { http: ['https://testnet-rpc.monad.xyz'] },
     },
     blockExplorers: {
         default: { name: 'MonadScan', url: 'https://testnet.monadexplorer.com' },

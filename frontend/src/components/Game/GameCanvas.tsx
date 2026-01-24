@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { usePrivyWallet } from '../../hooks/usePrivyWallet';
 import { useSoundSettings } from '../../hooks/useSoundSettings';
 import useTimer from './hooks/useTimer';
@@ -30,6 +30,8 @@ interface GameCanvasProps {
     onScoreUpdate: (points: number) => void;
     onEnemyReachBottom: () => void;
     onWpmUpdate?: (wpm: number) => void;
+    onMissUpdate?: (misses: number) => void;
+    onTypoUpdate?: (typos: number) => void;
     onReturnToStart?: () => void;
     onWaveComplete?: (waveNumber: number) => void;
     onQuestProgress?: (kills: number, droneKills: number) => void;
@@ -37,7 +39,7 @@ interface GameCanvasProps {
     goldEarned?: number;
     screenEffect: boolean;
     pvpMode: boolean;
-    gameMode?: 'story' | 'timeAttack' | 'pvp';
+    gameMode?: 'story' | 'timeAttack' | 'pvp' | 'staked' | 'duel';
     friendChainId?: string;
     remoteWord?: string;
     remoteType?: number | null;
@@ -46,7 +48,7 @@ interface GameCanvasProps {
     onPowerupsChange?: (powerups: string[]) => void;
 }
 
-const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEnemyReachBottom, onWpmUpdate, onReturnToStart, onWaveComplete, onQuestProgress, onGoldEarned, goldEarned = 0, screenEffect, pvpMode, gameMode = 'story', friendChainId, remoteWord, remoteType, highScore, selectedPowerups = [], onPowerupsChange }) => {
+const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEnemyReachBottom, onWpmUpdate, onMissUpdate, onTypoUpdate, onReturnToStart, onWaveComplete, onQuestProgress, onGoldEarned, goldEarned = 0, screenEffect, pvpMode, gameMode = 'story', friendChainId, remoteWord, remoteType, highScore, selectedPowerups = [], onPowerupsChange }) => {
     const { address } = usePrivyWallet();
     const { sfxMuted, sfxVolume } = useSoundSettings();
     const [playerInput, setPlayerInput] = useState('');
@@ -68,6 +70,10 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
     const [isTyping, setIsTyping] = useState(false);
     const [opponentTyping, setOpponentTyping] = useState(false);
     const [ownedPowerups, setOwnedPowerups] = useState<string[]>([]);
+    const [totalMisses, setTotalMisses] = useState(0);
+    const [totalTypos, setTotalTypos] = useState(0);
+    const totalMissesRef = useRef(0);
+    const totalTyposRef = useRef(0);
     const hasStartedFirstWave = useRef(false);
 
     // Sound refs
@@ -107,9 +113,20 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
         waveSystem.checkIfWaveComplete,
     ]);
 
+    // Wrapper for enemy reach bottom that also tracks misses for staked games
+    const handleEnemyReachBottomWithMiss = useCallback(() => {
+        onEnemyReachBottom();
+        // Track miss for staked/duel modes
+        if (gameMode === 'staked' || gameMode === 'duel') {
+            totalMissesRef.current += 1;
+            setTotalMisses(totalMissesRef.current);
+            onMissUpdate?.(totalMissesRef.current);
+        }
+    }, [onEnemyReachBottom, gameMode, onMissUpdate]);
+
     const { enemies, handleEnemyHit, spawnRemote, clearAllEnemies } = useEnemies(
         onGameOver,
-        onEnemyReachBottom,
+        handleEnemyReachBottomWithMiss,
         setHealth,
         restartSignal,
         !pvpMode,
@@ -291,6 +308,20 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
 
         if (typing) {
             setIsTyping(prev => !prev);
+            
+            // Track typos for staked/duel modes: a typo is when the new input doesn't match any enemy
+            if ((gameMode === 'staked' || gameMode === 'duel') && input.length > 0) {
+                const hasMatchingEnemy = enemies.some((e) => e.word.startsWith(input));
+                if (!hasMatchingEnemy && prevInputLengthRef.current > 0) {
+                    // Only count as typo if we were already targeting something
+                    const prevMatched = enemies.some((e) => e.word.startsWith(playerInput));
+                    if (prevMatched) {
+                        totalTyposRef.current += 1;
+                        setTotalTypos(totalTyposRef.current);
+                        onTypoUpdate?.(totalTyposRef.current);
+                    }
+                }
+            }
         }
 
         setPlayerInput(input);
@@ -369,6 +400,11 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
         scoreRef.current = 0;
         setBestWpm(0);
         bestWpmRef.current = 0;
+        // Reset miss/typo counters for staked games
+        setTotalMisses(0);
+        setTotalTypos(0);
+        totalMissesRef.current = 0;
+        totalTyposRef.current = 0;
         resetUsedWords();
         setRestartSignal((prev) => !prev);
         prevInputLengthRef.current = 0;

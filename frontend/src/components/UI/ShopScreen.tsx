@@ -12,7 +12,7 @@ import {
     setEquippedPowerups,
     STORAGE_KEYS
 } from '../../constants/gameStats';
-import { supabase } from '../../lib/supabaseClient';
+import { supabaseUntyped as supabase } from '../../lib/supabaseClient';
 import { ensureUserExists } from '../../utils/supabaseHelpers';
 
 interface ShopScreenProps {
@@ -96,15 +96,10 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ onClose, totalGold = 0, onPurch
 
                     if (inventoryData) {
                         const newInventory: Record<string, number> = {};
-                        inventoryData.forEach(item => {
+                        inventoryData.forEach((item: { item_id: string; quantity: number }) => {
                             newInventory[item.item_id] = item.quantity;
                         });
                         setInventory(newInventory);
-                        // Update local storage to match cloud
-                        // Note: ideally we'd implement a proper merge strategy, but for now cloud wins
-                        Object.entries(newInventory).forEach(([id, qty]) => {
-                            // This is a simplified sync, in reality we might want to update local storage properly
-                        });
                     }
                 }
             } catch (err) {
@@ -155,12 +150,12 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ onClose, totalGold = 0, onPurch
             if (address) {
                 // Get user data from Privy
                 const email = user?.email?.address || user?.google?.email;
-                const username = user?.google?.name;
+                const username = user?.google?.name ?? undefined;
                 const googleId = user?.google?.subject;
 
                 // 1. Get User ID
                 const userId = await ensureUserExists(supabase, address, {
-                    email,
+                    email: email ?? undefined,
                     username,
                     googleId
                 });
