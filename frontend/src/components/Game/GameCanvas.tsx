@@ -18,11 +18,66 @@ import { styles } from './GameCanvas.styles';
 
 // Space-themed words for the game
 const DEFAULT_WORDS = [
-    'monad', 'cosmos', 'stellar', 'orbit', 'nebula', 'quantum', 'warp', 'plasma',
-    'photon', 'galaxy', 'asteroid', 'comet', 'station', 'reactor', 'shields',
-    'laser', 'torpedo', 'hyperspace', 'protocol', 'validator', 'staking', 'defi',
-    'web3', 'crypto', 'token', 'chain', 'block', 'hash', 'decentralized', 'sector',
-    'beacon', 'signal', 'radar', 'pilot', 'engine', 'thrust', 'fuel', 'cargo'
+  // original
+  'monad','cosmos','stellar','orbit','nebula','quantum','warp','plasma','photon','galaxy',
+  'asteroid','comet','station','reactor','shields','laser','torpedo','hyperspace',
+  'protocol','validator','staking','defi','web3','crypto','token','chain','block','hash',
+  'decentralized','sector','beacon','signal','radar','pilot','engine','thrust','fuel','cargo',
+
+  // web3 / blockchain
+  'ethereum','solana','polygon','avalanche','arbitrum','optimism','zkrollup',
+  'sidechain','mainnet','testnet','gas','fee','gwei','wei','nonce','signature',
+  'privatekey','publickey','address','wallet','multisig','coldwallet','hotwallet',
+  'ledger','trezor','metamask','phantom','keystore','mnemonic','seedphrase',
+
+  'smartcontract','bytecode','opcode','compiler','solidity','vyper','rust','move',
+  'cairo','foundry','hardhat','truffle','remix','ethers','viem','websocket','rpc',
+  'jsonrpc','indexer','subgraph','thegraph','alchemy','infura',
+
+  'merkle','patricia','tree','root','proof','zkproof','snark','stark','plonk',
+  'circom','zkvm','rollup','sequencer','prover','verifier',
+
+  'consensus','pow','pos','dpos','delegator','slashing','epoch','slot','finality','fork',
+  'reorg','checkpoint','beaconchain',
+
+  'dex','amm','liquidity','pool','yield','farming','unstaking','borrow','lend',
+  'collateral','leverage','oracle','chainlink','pyth','band','liquidation',
+  'impermanentloss','tvl','apy','apr','slippage','flashloan',
+
+  'nft','metadata','mint','burn','airdrops','vesting',
+  'whitelist','royalties','marketplace','opensea','blur','rarity','traits',
+
+  'dao','governance','proposal','snapshot','voting','quorum','timelock','treasury',
+  'gnosis','safe',
+
+  'bridge','relayer','canonical','wrapped','pegged','crosschain','interoperability',
+  'ccip','wormhole','layerzero','axelar',
+
+  'security','audit','exploit','reentrancy','overflow','frontrun','mev','sandwich',
+  'backrun','rugpull','phishing','spoofing','sybil','ddos','bugbounty',
+
+  'tokenomics','inflation','deflation','supply','circulating','burnrate','emission',
+  'distribution','allocation','governanceToken','utilityToken',
+
+  'permissionless','trustless','censorshipresistant','immutability','sovereignty',
+  'cryptography','ellipticcurve','bls','hashing','keccak',
+  'sha256','ripemd','entropy','randomness',
+
+  'restaking','eigenlayer','modular','monolithic','execution','settlement','availability',
+  'blobspace','protoDanksharding',
+
+  'accountabstraction','paymaster','bundler','entrypoint','sessionkey','socialrecovery',
+  'zklogin','passkeys','biometrics',
+
+  // common words
+  'star','space','light','dark','fire','ice','wind','storm','cloud','sky',
+  'moon','sun','nova','void','core','field','zone','base','unit','team',
+  'power','speed','focus','force','shield','blade','spark','pulse','wave','shift',
+  'boost','drive','flow','lock','path','node','link','grid','frame','loop',
+  'point','score','rank','level','match','round','timer','start','pause','reset',
+  'build','break','craft','trade','store','send','claim','earn','spend','hold',
+  'open','close','enter','exit','join','leave','share','track','scan','ping',
+  'sync','load','save','play','watch','learn','train','win','lose','draw'
 ];
 
 interface GameCanvasProps {
