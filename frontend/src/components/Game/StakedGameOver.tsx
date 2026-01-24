@@ -180,15 +180,16 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
     triggerBackendSettlement();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const estimatedPayout = estimatePayout();
-  const isProfit = estimatedPayout > stakeAmount;
-
   // Calculate penalties for display
   const penalizedMisses = BigInt(missCount) > FREE_MISSES ? BigInt(missCount) - FREE_MISSES : BigInt(0);
   const penalizedTypos = BigInt(typoCount) > FREE_TYPOS ? BigInt(typoCount) - FREE_TYPOS : BigInt(0);
   const missDeduction = penalizedMisses * PENALTY_AMOUNT;
   const typoDeduction = penalizedTypos * PENALTY_AMOUNT;
   const totalSlashed = missDeduction + typoDeduction;
+
+  // Determine profit/loss: use actual payout if settled, otherwise estimate
+  const actualOrEstimatedPayout = status === 'settled' && payout !== null ? payout : estimatePayout();
+  const isProfit = actualOrEstimatedPayout > stakeAmount;
 
   return (
     <ResultCard

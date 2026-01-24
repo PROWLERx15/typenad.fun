@@ -301,6 +301,9 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
 
   const totalPot = stakeAmount * 2n;
   const isWinner = winner === 'you';
+  
+  // Determine profit/loss based on actual payout vs stake
+  const isProfit = payout !== null && payout > stakeAmount;
 
   return (
     <DuelResultCard
@@ -317,6 +320,7 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
       txHash={txHash}
       error={error}
       isWinner={isWinner}
+      isProfit={isProfit}
       waitingForOpponent={waitingForOpponent}
       onRestart={onRestart}
       onBackToMenu={onBackToMenu}
