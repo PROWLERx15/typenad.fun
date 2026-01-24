@@ -530,8 +530,18 @@ const GameStateManager: React.FC = () => {
                                         fontFamily: "'Courier New', monospace",
                                         marginBottom: '4px',
                                     }}>
-                                        Powered by Monad
+                                        Powered by
                                     </div>
+                                    <img 
+                                        src="/images/monad-logo.png" 
+                                        alt="Monad" 
+                                        style={{
+                                            width: '120px',
+                                            height: 'auto',
+                                            filter: 'brightness(0.9)',
+                                            opacity: 0.8,
+                                        }}
+                                    />
                                 </div>
                             </div>
                         </>

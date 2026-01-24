@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: 'typenad - Cosmic Typing Arena',
     description: 'A high-stakes cosmic typing game powered by Monad blockchain',
     icons: {
-        icon: '/images/typenad.png',
+        icon: '/images/monad-webpage-logo.jpeg',
     },
 };
 
@@ -28,7 +28,7 @@ export default function RootLayout({
                     rel="stylesheet"
                 />
             </head>
-            <body className={jetbrainsMono.className}>{children}</body>
+            <body className={jetbrainsMono.className} suppressHydrationWarning>{children}</body>
         </html>
     );
 }
