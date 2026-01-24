@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { FONT_IMPORT } from '../../styles/theme';
 import { useSoundSettings } from '../../hooks/useSoundSettings';
 import { usePrivyWallet } from '../../hooks/usePrivyWallet';
+import WalletWidget from './WalletWidget';
 import styles from './StartScreen.module.css';
 
 interface StartScreenProps {
@@ -30,8 +30,13 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart, onTimeAttack, onStor
     const { isConnected, address, login, ready, authenticated, walletError, clearWalletError, logout } = usePrivyWallet();
 
     const mouseOverRef = React.useRef<HTMLAudioElement>(null);
+    const [isMounted, setIsMounted] = React.useState(false);
 
     const isWalletReady = isConnected && address;
+
+    React.useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     React.useEffect(() => {
         if (mouseOverRef.current) {
@@ -56,8 +61,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart, onTimeAttack, onStor
 
     return (
         <>
-            <style>{FONT_IMPORT}</style>
-            <audio ref={mouseOverRef} src="/sounds/mouse-over.mp3" preload="auto" />
+            {isMounted && <audio ref={mouseOverRef} src="/sounds/mouse-over.mp3" preload="auto" />}
             <div className={styles.container}>
                 <div className={styles.topRightButtons}>
                     <button
@@ -176,11 +180,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart, onTimeAttack, onStor
                                 How to Play
                             </button>
 
-                            {address && (
-                                <div className={styles.chainIdContainer}>
-                                    Wallet: {address.slice(0, 6)}...{address.slice(-4)}
-                                </div>
-                            )}
+                            {address && <WalletWidget />}
                         </div>
                     )}
                 </div>
