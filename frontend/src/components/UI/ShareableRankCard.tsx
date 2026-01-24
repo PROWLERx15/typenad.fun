@@ -223,27 +223,60 @@ const ShareableRankCard: React.FC<ShareableRankCardProps> = ({
       // Trim white borders
       const trimmedCanvas = trimCanvas(canvas);
 
-      trimmedCanvas.toBlob(async (blob) => {
-        if (blob) {
-          await navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': blob })
-          ]);
-        }
-      });
+      const tweetText = `I'm a ${rankTitle} on typenad!\n\nScore: ${score.toLocaleString()}\nWPM: ${wpm || '-'}\n\nPlay now: https://typenad.fun\n\n#Typenad #Monad #SpeedTyping #Web3Gaming`;
 
-      const tweetText = `I'm a ${rankTitle} on typenad!\n\nScore: ${score.toLocaleString()}\nWPM: ${wpm || '-'}\n\nPlay now: https://typenad.xyz\n\n#typenad #TypingGame #Web3Gaming`;
-      const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+      // Try to use Web Share API with image (works on mobile and some desktop browsers)
+      if (navigator.share && navigator.canShare) {
+        await new Promise<void>((resolve) => {
+          trimmedCanvas.toBlob(async (blob) => {
+            if (blob) {
+              const file = new File([blob], 'typenad-card.png', { type: 'image/png' });
+              const shareData = {
+                text: tweetText,
+                files: [file],
+              };
 
-      window.open(tweetUrl, '_blank', 'width=550,height=420');
+              if (navigator.canShare(shareData)) {
+                try {
+                  await navigator.share(shareData);
+                  setShareSuccess(true);
+                  setTimeout(() => setShareSuccess(false), 3000);
+                } catch (shareErr) {
+                  // User cancelled or share failed, fall back to clipboard method
+                  console.log('Share cancelled or failed, using clipboard method');
+                  resolve();
+                }
+              } else {
+                resolve();
+              }
+            }
+            resolve();
+          });
+        });
+      } else {
+        // Fallback: Copy to clipboard and open Twitter
+        trimmedCanvas.toBlob(async (blob) => {
+          if (blob) {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]);
+          }
+        });
 
-      setShareSuccess(true);
-      setTimeout(() => setShareSuccess(false), 3000);
+        const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+        window.open(tweetUrl, '_blank', 'width=550,height=420');
+
+        setShareSuccess(true);
+        setTimeout(() => setShareSuccess(false), 3000);
+      }
     } catch (err) {
       console.error('Failed to share:', err);
     }
   };
 
-  const shortChainId = `${chainId.substring(0, 8)}...${chainId.substring(chainId.length - 6)}`;
+  // Extract first name only
+  const firstName = displayName ? displayName.split(' ')[0] : 'Anonymous';
+  const calculatedAura = Math.floor(score / 100);
 
   return (
     <div style={rankCardStyles.wrapper}>
@@ -253,7 +286,7 @@ const ShareableRankCard: React.FC<ShareableRankCardProps> = ({
           rankCardStyles.card,
           isHovered ? rankCardStyles.cardHovered : {},
           {
-            transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
+            transform: `perspective(1500px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
           }
         )}
         onMouseMove={handleMouseMove}
@@ -263,43 +296,65 @@ const ShareableRankCard: React.FC<ShareableRankCardProps> = ({
         {/* Inner glow effect */}
         <div style={rankCardStyles.innerGlow} />
 
+        {/* Inner frame border */}
+        <div style={rankCardStyles.innerFrame} />
+
         {/* Corner decorations */}
         <div style={mergeStyles(rankCardStyles.cornerDecor, rankCardStyles.cornerTopLeft)} />
         <div style={mergeStyles(rankCardStyles.cornerDecor, rankCardStyles.cornerTopRight)} />
         <div style={mergeStyles(rankCardStyles.cornerDecor, rankCardStyles.cornerBottomLeft)} />
         <div style={mergeStyles(rankCardStyles.cornerDecor, rankCardStyles.cornerBottomRight)} />
 
-        {/* Header */}
-        <div style={rankCardStyles.header}>
-          <img src="/images/typenad.png" alt="typenad" style={rankCardStyles.logo} />
-          <span style={rankCardStyles.gameTitle}>typenad</span>
-        </div>
-
-        {/* Rank Badge */}
-        <div style={rankCardStyles.rankBadge}>
-          {rankTitle}
-        </div>
-
-        {/* Stats Grid */}
-        <div style={rankCardStyles.statsGrid}>
-          <div style={rankCardStyles.statBox}>
-            <div style={rankCardStyles.statLabel}>High Score</div>
-            <div style={rankCardStyles.statValue}>{score.toLocaleString()}</div>
+        {/* Content */}
+        <div style={rankCardStyles.content}>
+          {/* Header - Name (left) + Aura (right) */}
+          <div style={rankCardStyles.header}>
+            <span style={rankCardStyles.firstName}>{firstName}</span>
+            <span style={rankCardStyles.auraValue}>Aura: {calculatedAura}</span>
           </div>
-          <div style={rankCardStyles.statBox}>
-            <div style={rankCardStyles.statLabel}>Best WPM</div>
-            <div style={rankCardStyles.statValue}>{wpm || '-'}</div>
+
+          {/* Image Section - Monad Logo + Description */}
+          <div style={rankCardStyles.imageSection}>
+            <img src="/images/monad-logo-purple.jpeg" alt="Monad" style={rankCardStyles.logo} />
+            <div style={rankCardStyles.logoDescription}>
+              Elite typing warrior with exceptional speed and accuracy in cosmic combat
+            </div>
           </div>
-        </div>
 
-        {/* Player Name / Chain ID */}
-        <div style={displayName ? rankCardStyles.displayName : rankCardStyles.chainId}>
-          {displayName || shortChainId}
-        </div>
+          {/* Stats Section (like Attack/Defense rows) */}
+          <div style={rankCardStyles.statsSection}>
+            <div style={rankCardStyles.statRow}>
+              <div style={rankCardStyles.statLeft}>
+                <div style={mergeStyles(rankCardStyles.statIcon, {
+                  background: 'linear-gradient(135deg, #ff6b4a 0%, #ff4a6b 100%)',
+                  boxShadow: '0 0 8px rgba(255, 107, 74, 0.4)',
+                })}>⚡</div>
+                <span style={rankCardStyles.statLabel}>Points</span>
+              </div>
+              <span style={rankCardStyles.statValue}>{score.toLocaleString()}</span>
+            </div>
 
-        {/* Footer */}
-        <div style={rankCardStyles.footer}>
-          <span style={rankCardStyles.footerText}>typenad</span>
+            <div style={rankCardStyles.statRow}>
+              <div style={rankCardStyles.statLeft}>
+                <div style={mergeStyles(rankCardStyles.statIcon, {
+                  background: 'linear-gradient(135deg, #4a9fff 0%, #6b4aff 100%)',
+                  boxShadow: '0 0 8px rgba(74, 159, 255, 0.4)',
+                })}>⌨</div>
+                <span style={rankCardStyles.statLabel}>WPM</span>
+              </div>
+              <span style={rankCardStyles.statValue}>{wpm || 0}</span>
+            </div>
+          </div>
+
+          {/* Rank Title Box */}
+          <div style={rankCardStyles.rankBox}>
+            <span style={rankCardStyles.rankTitle}>{rankTitle || 'GALACTIC OVERLORD'}</span>
+          </div>
+
+          {/* Footer Branding */}
+          <div style={rankCardStyles.footerBranding}>
+            TYPENAD AURA CARD
+          </div>
         </div>
       </div>
 
