@@ -74,12 +74,28 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
 
       if (!response.ok) {
         const data = await response.json();
+        // Check if it's a SessionNotActive error (already settled)
+        if (data.error?.includes('SessionNotActive') || data.alreadySettled) {
+          // Game was already settled, try to fetch the result
+          const statusResponse = await fetch(`/api/game-settlement-status?sequenceNumber=${sequenceNumber.toString()}`);
+          const statusData = await statusResponse.json();
+          if (statusData.status === 'settled') {
+            setPayout(BigInt(statusData.payout || '0'));
+            setTxHash(statusData.txHash || '');
+            setStatus('settled');
+            return;
+          }
+        }
         throw new Error(data.error || 'Failed to trigger settlement');
       }
 
       const result = await response.json();
 
       if (result.success) {
+        // Check if it was already settled
+        if (result.alreadySettled) {
+          console.log('[StakedGameOver] Game was already settled');
+        }
         // Settlement executed successfully
         setPayout(BigInt(result.payout || '0'));
         setTxHash(result.txHash || '');
@@ -90,7 +106,14 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
 
     } catch (err: unknown) {
       console.error('[StakedGameOver] Settlement trigger failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to trigger settlement');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to trigger settlement';
+
+      // If it's a SessionNotActive error, the game is already settled
+      if (errorMessage.includes('SessionNotActive')) {
+        setError('Game already settled - payout was sent!');
+      } else {
+        setError(errorMessage);
+      }
       setStatus('error');
     }
   };
@@ -108,18 +131,20 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
         }
 
         const data = await response.json();
-        
+
         if (data.status === 'settled') {
           // Settlement complete!
           clearInterval(pollInterval);
           setPayout(BigInt(data.payout || '0'));
           setTxHash(data.txHash || '');
           setStatus('settled');
-        } else if (data.status === 'error') {
+        } else if (data.status === 'error' && data.error && !data.error.includes('Could not verify on-chain status')) {
+          // Only set error for definitive errors, not RPC timeouts
           clearInterval(pollInterval);
           setError(data.error || 'Settlement failed');
           setStatus('error');
         }
+        // For 'pending' or RPC errors, keep polling
       } catch (err) {
         console.error('[StakedGameOver] Error polling settlement status:', err);
       }

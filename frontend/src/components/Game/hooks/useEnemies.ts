@@ -23,7 +23,9 @@ const useEnemies = (
     waveState?: string,
     waveCallbacks?: WaveCallbacks,
     scoreMultiplier: number = 1,
-    speedMultiplier: number = 1
+    speedMultiplier: number = 1,
+    gameMode: 'story' | 'timeAttack' | 'pvp' | 'staked' | 'duel' = 'story',
+    onPenaltyMiss?: () => void
 ) => {
     const [enemies, setEnemies] = useState<Enemy[]>([]);
     const enemyKillCountRef = useRef(0);
@@ -33,13 +35,15 @@ const useEnemies = (
     const onEnemyReachBottomRef = useRef(onEnemyReachBottom);
     const setHealthRef = useRef(setHealth);
     const waveCallbacksRef = useRef(waveCallbacks);
+    const onPenaltyMissRef = useRef(onPenaltyMiss);
 
     useEffect(() => {
         onGameOverRef.current = onGameOver;
         onEnemyReachBottomRef.current = onEnemyReachBottom;
         setHealthRef.current = setHealth;
         waveCallbacksRef.current = waveCallbacks;
-    }, [onGameOver, onEnemyReachBottom, setHealth, waveCallbacks]);
+        onPenaltyMissRef.current = onPenaltyMiss;
+    }, [onGameOver, onEnemyReachBottom, setHealth, waveCallbacks, onPenaltyMiss]);
 
     const spawnEnemy = useCallback((forceType?: EnemyTypeName) => {
         const newWord = generateUniqueWord();
@@ -250,6 +254,18 @@ const useEnemies = (
 
                             setHealthRef.current((prevHealth) => {
                                 const newHealth = prevHealth - 1;
+
+                                // For staked mode: when health reaches 0 or below, show penalty instead of game over
+                                if (gameMode === 'staked') {
+                                    if (newHealth <= 0) {
+                                        // Call penalty callback for each miss beyond the free 10
+                                        setTimeout(() => onPenaltyMissRef.current?.(), 0);
+                                        return 0; // Keep health at 0, don't go negative
+                                    }
+                                    return newHealth;
+                                }
+
+                                // For other modes: trigger game over when health hits 0
                                 if (newHealth <= 0) {
                                     setTimeout(() => onGameOverRef.current(), 0);
                                 }

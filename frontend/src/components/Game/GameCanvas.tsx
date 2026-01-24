@@ -18,66 +18,66 @@ import { styles } from './GameCanvas.styles';
 
 // Space-themed words for the game
 const DEFAULT_WORDS = [
-  // original
-  'monad','cosmos','stellar','orbit','nebula','quantum','warp','plasma','photon','galaxy',
-  'asteroid','comet','station','reactor','shields','laser','torpedo','hyperspace',
-  'protocol','validator','staking','defi','web3','crypto','token','chain','block','hash',
-  'decentralized','sector','beacon','signal','radar','pilot','engine','thrust','fuel','cargo',
+    // original
+    'monad', 'cosmos', 'stellar', 'orbit', 'nebula', 'quantum', 'warp', 'plasma', 'photon', 'galaxy',
+    'asteroid', 'comet', 'station', 'reactor', 'shields', 'laser', 'torpedo', 'hyperspace',
+    'protocol', 'validator', 'staking', 'defi', 'web3', 'crypto', 'token', 'chain', 'block', 'hash',
+    'decentralized', 'sector', 'beacon', 'signal', 'radar', 'pilot', 'engine', 'thrust', 'fuel', 'cargo',
 
-  // web3 / blockchain
-  'ethereum','solana','polygon','avalanche','arbitrum','optimism','zkrollup',
-  'sidechain','mainnet','testnet','gas','fee','gwei','wei','nonce','signature',
-  'privatekey','publickey','address','wallet','multisig','coldwallet','hotwallet',
-  'ledger','trezor','metamask','phantom','keystore','mnemonic','seedphrase',
+    // web3 / blockchain
+    'ethereum', 'solana', 'polygon', 'avalanche', 'arbitrum', 'optimism', 'zkrollup',
+    'sidechain', 'mainnet', 'testnet', 'gas', 'fee', 'gwei', 'wei', 'nonce', 'signature',
+    'privatekey', 'publickey', 'address', 'wallet', 'multisig', 'coldwallet', 'hotwallet',
+    'ledger', 'trezor', 'metamask', 'phantom', 'keystore', 'mnemonic', 'seedphrase',
 
-  'smartcontract','bytecode','opcode','compiler','solidity','vyper','rust','move',
-  'cairo','foundry','hardhat','truffle','remix','ethers','viem','websocket','rpc',
-  'jsonrpc','indexer','subgraph','thegraph','alchemy','infura',
+    'smartcontract', 'bytecode', 'opcode', 'compiler', 'solidity', 'vyper', 'rust', 'move',
+    'cairo', 'foundry', 'hardhat', 'truffle', 'remix', 'ethers', 'viem', 'websocket', 'rpc',
+    'jsonrpc', 'indexer', 'subgraph', 'thegraph', 'alchemy', 'infura',
 
-  'merkle','patricia','tree','root','proof','zkproof','snark','stark','plonk',
-  'circom','zkvm','rollup','sequencer','prover','verifier',
+    'merkle', 'patricia', 'tree', 'root', 'proof', 'zkproof', 'snark', 'stark', 'plonk',
+    'circom', 'zkvm', 'rollup', 'sequencer', 'prover', 'verifier',
 
-  'consensus','pow','pos','dpos','delegator','slashing','epoch','slot','finality','fork',
-  'reorg','checkpoint','beaconchain',
+    'consensus', 'pow', 'pos', 'dpos', 'delegator', 'slashing', 'epoch', 'slot', 'finality', 'fork',
+    'reorg', 'checkpoint', 'beaconchain',
 
-  'dex','amm','liquidity','pool','yield','farming','unstaking','borrow','lend',
-  'collateral','leverage','oracle','chainlink','pyth','band','liquidation',
-  'impermanentloss','tvl','apy','apr','slippage','flashloan',
+    'dex', 'amm', 'liquidity', 'pool', 'yield', 'farming', 'unstaking', 'borrow', 'lend',
+    'collateral', 'leverage', 'oracle', 'chainlink', 'pyth', 'band', 'liquidation',
+    'impermanentloss', 'tvl', 'apy', 'apr', 'slippage', 'flashloan',
 
-  'nft','metadata','mint','burn','airdrops','vesting',
-  'whitelist','royalties','marketplace','opensea','blur','rarity','traits',
+    'nft', 'metadata', 'mint', 'burn', 'airdrops', 'vesting',
+    'whitelist', 'royalties', 'marketplace', 'opensea', 'blur', 'rarity', 'traits',
 
-  'dao','governance','proposal','snapshot','voting','quorum','timelock','treasury',
-  'gnosis','safe',
+    'dao', 'governance', 'proposal', 'snapshot', 'voting', 'quorum', 'timelock', 'treasury',
+    'gnosis', 'safe',
 
-  'bridge','relayer','canonical','wrapped','pegged','crosschain','interoperability',
-  'ccip','wormhole','layerzero','axelar',
+    'bridge', 'relayer', 'canonical', 'wrapped', 'pegged', 'crosschain', 'interoperability',
+    'ccip', 'wormhole', 'layerzero', 'axelar',
 
-  'security','audit','exploit','reentrancy','overflow','frontrun','mev','sandwich',
-  'backrun','rugpull','phishing','spoofing','sybil','ddos','bugbounty',
+    'security', 'audit', 'exploit', 'reentrancy', 'overflow', 'frontrun', 'mev', 'sandwich',
+    'backrun', 'rugpull', 'phishing', 'spoofing', 'sybil', 'ddos', 'bugbounty',
 
-  'tokenomics','inflation','deflation','supply','circulating','burnrate','emission',
-  'distribution','allocation','governanceToken','utilityToken',
+    'tokenomics', 'inflation', 'deflation', 'supply', 'circulating', 'burnrate', 'emission',
+    'distribution', 'allocation', 'governanceToken', 'utilityToken',
 
-  'permissionless','trustless','censorshipresistant','immutability','sovereignty',
-  'cryptography','ellipticcurve','bls','hashing','keccak',
-  'sha256','ripemd','entropy','randomness',
+    'permissionless', 'trustless', 'censorshipresistant', 'immutability', 'sovereignty',
+    'cryptography', 'ellipticcurve', 'bls', 'hashing', 'keccak',
+    'sha256', 'ripemd', 'entropy', 'randomness',
 
-  'restaking','eigenlayer','modular','monolithic','execution','settlement','availability',
-  'blobspace','protoDanksharding',
+    'restaking', 'eigenlayer', 'modular', 'monolithic', 'execution', 'settlement', 'availability',
+    'blobspace', 'protoDanksharding',
 
-  'accountabstraction','paymaster','bundler','entrypoint','sessionkey','socialrecovery',
-  'zklogin','passkeys','biometrics',
+    'accountabstraction', 'paymaster', 'bundler', 'entrypoint', 'sessionkey', 'socialrecovery',
+    'zklogin', 'passkeys', 'biometrics',
 
-  // common words
-  'star','space','light','dark','fire','ice','wind','storm','cloud','sky',
-  'moon','sun','nova','void','core','field','zone','base','unit','team',
-  'power','speed','focus','force','shield','blade','spark','pulse','wave','shift',
-  'boost','drive','flow','lock','path','node','link','grid','frame','loop',
-  'point','score','rank','level','match','round','timer','start','pause','reset',
-  'build','break','craft','trade','store','send','claim','earn','spend','hold',
-  'open','close','enter','exit','join','leave','share','track','scan','ping',
-  'sync','load','save','play','watch','learn','train','win','lose','draw'
+    // common words
+    'star', 'space', 'light', 'dark', 'fire', 'ice', 'wind', 'storm', 'cloud', 'sky',
+    'moon', 'sun', 'nova', 'void', 'core', 'field', 'zone', 'base', 'unit', 'team',
+    'power', 'speed', 'focus', 'force', 'shield', 'blade', 'spark', 'pulse', 'wave', 'shift',
+    'boost', 'drive', 'flow', 'lock', 'path', 'node', 'link', 'grid', 'frame', 'loop',
+    'point', 'score', 'rank', 'level', 'match', 'round', 'timer', 'start', 'pause', 'reset',
+    'build', 'break', 'craft', 'trade', 'store', 'send', 'claim', 'earn', 'spend', 'hold',
+    'open', 'close', 'enter', 'exit', 'join', 'leave', 'share', 'track', 'scan', 'ping',
+    'sync', 'load', 'save', 'play', 'watch', 'learn', 'train', 'win', 'lose', 'draw'
 ];
 
 interface GameCanvasProps {
@@ -130,6 +130,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
     const totalMissesRef = useRef(0);
     const totalTyposRef = useRef(0);
     const hasStartedFirstWave = useRef(false);
+    const [penaltyNotifications, setPenaltyNotifications] = useState<Array<{ id: number; amount: number }>>([]);
+    const penaltyNotificationIdRef = useRef(0);
 
     // Sound refs
     const laserSoundRef = useRef<HTMLAudioElement | null>(null);
@@ -179,6 +181,18 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
         }
     }, [onEnemyReachBottom, gameMode, onMissUpdate]);
 
+    // Handler for penalty misses in staked mode (when health is already at 0)
+    const handlePenaltyMiss = useCallback(() => {
+        penaltyNotificationIdRef.current += 1;
+        const id = penaltyNotificationIdRef.current;
+        setPenaltyNotifications(prev => [...prev, { id, amount: 0.1 }]);
+
+        // Remove notification after 2 seconds
+        setTimeout(() => {
+            setPenaltyNotifications(prev => prev.filter(n => n.id !== id));
+        }, 2000);
+    }, []);
+
     const { enemies, handleEnemyHit, spawnRemote, clearAllEnemies } = useEnemies(
         onGameOver,
         handleEnemyReachBottomWithMiss,
@@ -188,7 +202,9 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
         waveSystem.waveState,
         waveCallbacks,
         scoreMultiplier,
-        speedMultiplier
+        speedMultiplier,
+        gameMode,
+        handlePenaltyMiss
     );
 
     // Initialize word library with space-themed words
@@ -548,6 +564,27 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
                             <div key={notification.id} style={styles.floatingGold}>
                                 <span>+{notification.amount}</span>
                                 <img src="/images/gold-coin.png" alt="Credits" style={styles.floatingGoldIcon} />
+                            </div>
+                        ))}
+                        {/* Penalty notifications for staked mode */}
+                        {penaltyNotifications.map((notification) => (
+                            <div key={notification.id} style={{
+                                position: 'absolute',
+                                top: '60px',
+                                right: '20px',
+                                padding: '8px 16px',
+                                background: 'rgba(255, 50, 50, 0.9)',
+                                border: '2px solid #ff0000',
+                                borderRadius: '8px',
+                                color: '#fff',
+                                fontFamily: '"Press Start 2P", monospace',
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                                animation: 'shake 0.5s ease-in-out, fadeOut 2s forwards',
+                                boxShadow: '0 0 20px rgba(255, 0, 0, 0.5)',
+                                zIndex: 1000,
+                            }}>
+                                -{notification.amount} USDC
                             </div>
                         ))}
                     </div>
