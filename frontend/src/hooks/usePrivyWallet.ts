@@ -24,7 +24,8 @@ export function usePrivyWallet() {
                 console.error('⏱️ Wallet creation timeout');
             }, 15000);
         } else if (embeddedWallet) {
-            setWalletError(null);
+            // eslint-disable-next-line
+            setWalletError(prev => prev ? null : prev);
         }
 
         return () => {

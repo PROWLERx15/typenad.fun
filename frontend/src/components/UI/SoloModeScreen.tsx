@@ -173,8 +173,7 @@ const SoloModeScreen: React.FC<SoloModeScreenProps> = ({
           <div className={styles.modeCard}>
             <h2 className={styles.modeTitle}>Survival</h2>
             <p className={styles.modeDescription}>
-              Endless zombie waves.
-              <br />
+              Endless enemy waves.<br />
               How long can you last?
             </p>
             <button onClick={onSurvival} className={styles.modeButton}>

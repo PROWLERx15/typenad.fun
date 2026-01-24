@@ -53,7 +53,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
     const { sfxMuted, sfxVolume } = useSoundSettings();
     const [playerInput, setPlayerInput] = useState('');
     const [targetedEnemyId, setTargetedEnemyId] = useState<number | null>(null);
-    const [health, setHealth] = useState(3);
+    const [health, setHealth] = useState(10);
     const [score, setScore] = useState(0);
     const scoreRef = useRef(0);
     const [flashScore, setFlashScore] = useState(false);
@@ -190,9 +190,9 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
 
         // Extra life
         if (selectedPowerups.includes('extra-life')) {
-            setHealth(4);
+            setHealth(11);
         } else {
-            setHealth(3);
+            setHealth(10);
         }
     }, [selectedPowerups, restartSignal, pvpMode]);
 
@@ -395,7 +395,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
     const restartGame = () => {
         setPlayerInput('');
         setTargetedEnemyId(null);
-        setHealth(selectedPowerups.includes('extra-life') ? 4 : 3);
+        setHealth(selectedPowerups.includes('extra-life') ? 11 : 10);
         setScore(0);
         scoreRef.current = 0;
         setBestWpm(0);

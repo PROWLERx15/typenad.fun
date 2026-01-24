@@ -33,7 +33,6 @@ export function useAuthSync() {
                 const email = user?.email?.address || user?.google?.email;
                 const googleName = user?.google?.name;
                 const googleId = user?.google?.subject;
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const profilePicture = (user?.google as any)?.picture;
 
                 // Generate username from Google name or wallet address
@@ -67,24 +66,24 @@ export function useAuthSync() {
                 if (userData) {
                     // 4. Sync to localStorage
                     localStorage.setItem('wallet_address', address);
-                    localStorage.setItem('playerGold', userData.gold.toString());
-                    
-                    if (userData.username) {
-                        localStorage.setItem('display_name', userData.username);
+                    localStorage.setItem('playerGold', (userData as any).gold.toString());
+
+                    if ((userData as any).username) {
+                        localStorage.setItem('display_name', (userData as any).username);
                     }
 
-                    if (userData.email) {
-                        localStorage.setItem('user_email', userData.email);
+                    if ((userData as any).email) {
+                        localStorage.setItem('user_email', (userData as any).email);
                     }
 
-                    if (userData.profile_picture) {
-                        localStorage.setItem('profile_picture', userData.profile_picture);
+                    if ((userData as any).profile_picture) {
+                        localStorage.setItem('profile_picture', (userData as any).profile_picture);
                     }
 
                     console.log('💾 Synced to localStorage:', {
                         address,
-                        gold: userData.gold,
-                        username: userData.username
+                        gold: (userData as any).gold,
+                        username: (userData as any).username
                     });
                 }
 
@@ -92,7 +91,7 @@ export function useAuthSync() {
             } catch (err) {
                 console.error('❌ Auth sync failed:', err);
                 setError(err instanceof Error ? err.message : 'Failed to sync user data');
-                
+
                 // Fallback: still save wallet address to localStorage
                 if (address) {
                     localStorage.setItem('wallet_address', address);

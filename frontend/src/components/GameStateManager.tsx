@@ -192,9 +192,9 @@ const GameStateManager: React.FC = () => {
             const { supabase } = await import('../lib/supabaseClient');
 
             // Get user data from Privy
-            const email = user?.email?.address || user?.google?.email;
-            const username = user?.google?.name ?? undefined;
-            const googleId = user?.google?.subject;
+            const email = (user?.email?.address || user?.google?.email) || undefined;
+            const username = user?.google?.name || undefined;
+            const googleId = user?.google?.subject || undefined;
 
             // 1. Ensure user exists with Privy data
             const userId = await ensureUserExists(supabase, walletAddress, {
@@ -205,9 +205,8 @@ const GameStateManager: React.FC = () => {
 
             // 2. Insert score
             if (userId) {
-                const { supabaseUntyped: supabase } = await import('../lib/supabaseClient');
-                const { error: scoreError } = await supabase
-                    .from('game_scores')
+                const { error: scoreError } = await (supabase
+                    .from('game_scores') as any)
                     .insert({
                         user_id: userId,
                         score,
