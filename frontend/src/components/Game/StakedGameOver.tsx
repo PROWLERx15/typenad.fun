@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTypeNadContract } from '../../hooks/useTypeNadContract';
 import { usePrivyWallet } from '../../hooks/usePrivyWallet';
-import { formatUSDC } from '../../hooks/useUSDC';
-import { styles as gameOverStyles } from './GameOver.styles';
+import ResultCard from './ResultCard';
 
 interface StakedGameOverProps {
   score: number;
@@ -155,6 +154,12 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
 
   const estimatedPayout = estimatePayout();
   const isProfit = estimatedPayout > stakeAmount;
+
+  // Calculate slashed amount for display
+  const FREE_MISSES = BigInt(10);
+  const PENALTY_AMOUNT = BigInt(100_000); // 0.1 USDC
+  const penalizedMisses = BigInt(missCount) > FREE_MISSES ? BigInt(missCount) - FREE_MISSES : BigInt(0);
+  const slashedAmount = penalizedMisses * PENALTY_AMOUNT;
 
   return (
     <>
