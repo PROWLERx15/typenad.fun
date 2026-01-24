@@ -79,9 +79,9 @@ export const styles = {
     left: 15,
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     color: COLORS.gray,
-    textAlign: 'left',
+    textAlign: 'center',
     opacity: 0.7,
   } as CSSProperties,
 
