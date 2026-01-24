@@ -24,7 +24,7 @@ import type {
 export { TYPE_NAD_CONTRACT_ADDRESS };
 
 // RPC URL with Alchemy fallback
-const RPC_URL = process.env.MONAD_RPC_TESTNET || 'https://testnet-rpc.monad.xyz';
+const RPC_URL = process.env.NEXT_PUBLIC_MONAD_RPC_TESTNET || 'https://testnet-rpc.monad.xyz';
 
 export function useTypeNadContract() {
   const { wallet, address } = usePrivyWallet();
@@ -58,12 +58,19 @@ export function useTypeNadContract() {
   // ============= READ FUNCTIONS =============
 
   const getEntropyFee = useCallback(async (): Promise<bigint> => {
-    const fee = await publicClient.readContract({
-      address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
-      abi: TYPE_NAD_ABI,
-      functionName: 'getEntropyFee',
-    });
-    return fee as bigint;
+    try {
+      const fee = await publicClient.readContract({
+        address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
+        abi: TYPE_NAD_ABI,
+        functionName: 'getEntropyFee',
+      });
+      return fee as bigint;
+    } catch (err) {
+      console.error('Failed to fetch entropy fee:', err);
+      // Return a default fee if the call fails (approximately 0.0001 MON in wei)
+      // This is a reasonable fallback for testnet
+      return BigInt('100000000000000'); // 0.0001 MON = 10^14 wei
+    }
   }, [publicClient]);
 
   const getUSDCAddress = useCallback(async (): Promise<`0x${string}`> => {

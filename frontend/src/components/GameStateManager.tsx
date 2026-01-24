@@ -6,6 +6,7 @@ import { usePrivyWallet } from '../hooks/usePrivyWallet';
 import { useAuthSync } from '../hooks/useAuthSync';
 import { useGoldBalance } from '../hooks/useGoldBalance';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { DebugPanel } from './DebugPanel';
 import GameCanvas from './Game/GameCanvas';
 import SoundManager from './Game/SoundManager';
 import GameOver from './Game/GameOver';
@@ -29,7 +30,7 @@ import { ensureUserExists } from '../utils/supabaseHelpers';
 
 const GameStateManager: React.FC = () => {
     const isOnline = useOnlineStatus();
-    const { user } = usePrivy();
+    const { user, ready: privyReady, authenticated } = usePrivy();
     const { address, isConnected, walletError, clearWalletError, logout } = usePrivyWallet();
     const { syncing, synced, error: syncError } = useAuthSync();
     const { gold, updateGold, addGold } = useGoldBalance();
@@ -297,7 +298,47 @@ const GameStateManager: React.FC = () => {
     // Status based on wallet connection
     const statusTextToDisplay = isConnected ? 'Solo Game' : 'Connect Wallet to Play';
 
-    // Show loading while syncing auth
+    // Check if user has a previous session (to prevent flash of login screen on refresh)
+    const hasPreviousSession = typeof window !== 'undefined'
+        ? !!localStorage.getItem('wallet_address')
+        : false;
+
+    // Show minimal loading while Privy is initializing (prevents flash of login screen on refresh)
+    if (!privyReady) {
+        return (
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '100vh',
+                backgroundColor: '#0a0a0a',
+                color: '#fff',
+            }}>
+                {/* Minimal loading state - no text to avoid flash */}
+            </div>
+        );
+    }
+
+    // If user has a previous session but isn't authenticated yet, Privy is still hydrating
+    // Show loading state to prevent flash of login screen
+    if (privyReady && hasPreviousSession && !authenticated) {
+        return (
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '100vh',
+                backgroundColor: '#0a0a0a',
+                color: '#fff',
+            }}>
+                {/* Minimal loading state while Privy hydrates session */}
+            </div>
+        );
+    }
+
+    // Show loading while syncing auth (only for first-time users)
     if (isConnected && syncing) {
         return (
             <div style={{
@@ -648,6 +689,9 @@ const GameStateManager: React.FC = () => {
                 };
                 return screens[gameState];
             })()}
+
+            {/* Debug Panel - only visible when connected */}
+            {isConnected && <DebugPanel />}
         </>
     );
 };

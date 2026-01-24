@@ -307,14 +307,14 @@ const PVPModeScreen: React.FC<PVPModeScreenProps> = ({
               <button
                 onClick={() => setView('create')}
                 className={styles.button}
-                style={{ backgroundColor: '#8B5CF6' }}
+                style={{ backgroundColor: '#8B5CF6', color: '#fff' }}
               >
                 Create Duel
               </button>
               <button
                 onClick={() => setView('join')}
                 className={styles.button}
-                style={{ backgroundColor: '#22c55e' }}
+                style={{ backgroundColor: '#22c55e', color: '#fff' }}
               >
                 Join Duel
               </button>
@@ -460,7 +460,7 @@ const PVPModeScreen: React.FC<PVPModeScreenProps> = ({
                     onClick={handleCreateDuel}
                     disabled={isLoading || getEffectiveStake() === 0n || getEffectiveStake() > usdcBalance}
                     className={styles.button}
-                    style={{ backgroundColor: '#8B5CF6' }}
+                    style={{ backgroundColor: '#8B5CF6', color: '#fff' }}
                   >
                     {isLoading ? 'Processing...' : 'Create Duel'}
                   </button>
@@ -502,7 +502,7 @@ const PVPModeScreen: React.FC<PVPModeScreenProps> = ({
                 onClick={handleJoinById}
                 disabled={isLoading || !joinDuelId}
                 className={styles.button}
-                style={{ backgroundColor: '#22c55e' }}
+                style={{ backgroundColor: '#22c55e', color: '#fff' }}
               >
                 {isLoading ? 'Processing...' : 'Join Duel'}
               </button>
