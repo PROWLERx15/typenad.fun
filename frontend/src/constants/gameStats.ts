@@ -179,7 +179,7 @@ export const consumeEquippedPowerups = (): string[] => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const recordGameEnd = async (
-    mode: 'story' | 'timeAttack' | 'pvp',
+    mode: 'story' | 'timeAttack' | 'pvp' | 'staked' | 'duel',
     score: number,
     wpm: number,
     wave: number,
@@ -198,7 +198,7 @@ export const recordGameEnd = async (
 
     // Add to match history
     addMatchToHistory({
-        mode,
+        mode: mode === 'staked' || mode === 'duel' ? 'story' : mode,
         score,
         wpm,
         wave,

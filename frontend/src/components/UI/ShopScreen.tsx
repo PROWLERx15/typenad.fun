@@ -12,7 +12,7 @@ import {
     setEquippedPowerups,
     STORAGE_KEYS
 } from '../../constants/gameStats';
-import { supabase } from '../../lib/supabaseClient';
+import { supabaseUntyped as supabase } from '../../lib/supabaseClient';
 import { ensureUserExists } from '../../utils/supabaseHelpers';
 
 interface ShopScreenProps {
@@ -96,16 +96,10 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ onClose, totalGold = 0, onPurch
 
                     if (inventoryData) {
                         const newInventory: Record<string, number> = {};
-                        const items = inventoryData as any[];
-                        items.forEach(item => {
+                        inventoryData.forEach((item: { item_id: string; quantity: number }) => {
                             newInventory[item.item_id] = item.quantity;
                         });
                         setInventory(newInventory);
-                        // Update local storage to match cloud
-                        // Note: ideally we'd implement a proper merge strategy, but for now cloud wins
-                        Object.entries(newInventory).forEach(([id, qty]) => {
-                            // This is a simplified sync, in reality we might want to update local storage properly
-                        });
                     }
                 }
             } catch (err) {
@@ -161,7 +155,7 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ onClose, totalGold = 0, onPurch
 
                 // 1. Get User ID
                 const userId = await ensureUserExists(supabase, address, {
-                    email,
+                    email: email ?? undefined,
                     username,
                     googleId
                 });

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePrivyWallet } from './usePrivyWallet';
-import { supabase } from '../lib/supabaseClient';
+import { supabaseUntyped as supabase } from '../lib/supabaseClient';
 
 export function useGoldBalance() {
     const { address, isConnected } = usePrivyWallet();

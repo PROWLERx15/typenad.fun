@@ -8,7 +8,7 @@ import { styles } from './CryptScreen.styles';
 import { ENEMY_TYPE_IDS } from '../../constants/enemyTypes';
 import { getPlayerStats, getMatchHistory, getPowerupInventory, MatchHistoryEntry } from '../../constants/gameStats';
 import ShareableRankCard from './ShareableRankCard';
-import { supabase } from '../../lib/supabaseClient';
+import { supabaseUntyped as supabase } from '../../lib/supabaseClient';
 import { ensureUserExists } from '../../utils/supabaseHelpers';
 
 interface CryptScreenProps {
@@ -122,14 +122,7 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
                     }
 
                     // Update stats from database (source of truth)
-                    if (user.total_games !== undefined) {
-                        const dbStats = {
-                            totalGames: user.total_games || 0,
-                            totalKills: user.total_kills || 0,
-                            totalGoldEarned: stats.totalGoldEarned, // Keep local for now
-                            bestStreak: stats.bestStreak,
-                            totalWordsTyped: user.total_words_typed || 0
-                        };
+                    if (userData.total_games !== undefined) {
                         setOnlineStats({
                             totalGames: user.total_games || 0,
                             totalKills: user.total_kills || 0,
@@ -145,18 +138,19 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
 
                     const scores = scoresData as any[];
 
-                    if (scores && scores.length > 0) {
-                        const bestScore = Math.max(...scores.map(s => s.score));
-                        const bestWpm = Math.max(...scores.map(s => s.wpm));
+                    if (scoresData && scoresData.length > 0) {
+                        const bestScore = Math.max(...scoresData.map((s: { score: number }) => s.score));
+                        const bestWpm = Math.max(...scoresData.map((s: { wpm: number }) => s.wpm));
 
                         if (bestScore > myScore) setMyScore(bestScore);
                         if (bestWpm > myWpm) setMyWpm(bestWpm);
 
                         // Update match history
-                        const history: MatchHistoryEntry[] = scores
-                            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                        const history: MatchHistoryEntry[] = scoresData
+                            .sort((a: { created_at: string }, b: { created_at: string }) => 
+                                new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                             .slice(0, 20)
-                            .map(s => ({
+                            .map((s: { score: number; wpm: number; kills?: number; wave_reached?: number; created_at: string }) => ({
                                 id: Math.random().toString(),
                                 date: s.created_at,
                                 score: s.score,
@@ -180,7 +174,7 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
 
                     if (items) {
                         const newInventory: Record<string, number> = {};
-                        items.forEach(item => {
+                        inventoryData.forEach((item: { item_id: string; quantity: number }) => {
                             newInventory[item.item_id] = item.quantity;
                         });
                         setInventory(newInventory);
@@ -205,7 +199,7 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
                 const googleId = user?.google?.subject;
 
                 const userId = await ensureUserExists(supabase, address, {
-                    email,
+                    email: email ?? undefined,
                     username: displayName,
                     googleId
                 } as any);

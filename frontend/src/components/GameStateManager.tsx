@@ -9,6 +9,8 @@ import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import GameCanvas from './Game/GameCanvas';
 import SoundManager from './Game/SoundManager';
 import GameOver from './Game/GameOver';
+import StakedGameOver from './Game/StakedGameOver';
+import DuelGameOver from './Game/DuelGameOver';
 import StartScreen from './UI/StartScreen';
 import OnboardingScreen from './UI/OnboardingScreen';
 import PVPModeScreen from './UI/PVPModeScreen';
@@ -42,7 +44,7 @@ const GameStateManager: React.FC = () => {
         typeof window !== 'undefined' ? globalThis.crypto.randomUUID() : ''
     );
     const [bestWpm, setBestWpm] = useState<number>(0);
-    const [gameMode, setGameMode] = useState<'story' | 'timeAttack' | 'pvp'>('story');
+    const [gameMode, setGameMode] = useState<'story' | 'timeAttack' | 'pvp' | 'staked' | 'duel'>('story');
 
     const [incomingMessage, setIncomingMessage] = useState<string>('');
     const [incomingMessageType, setIncomingMessageType] = useState<number | null>(null);
@@ -52,6 +54,15 @@ const GameStateManager: React.FC = () => {
     const [isRematch, setIsRematch] = useState<boolean>(false);
     const matchRecordedRef = useRef<boolean>(false);
     const [selectedPowerups, setSelectedPowerups] = useState<string[]>([]);
+
+    // Staked game state
+    const [stakedSequenceNumber, setStakedSequenceNumber] = useState<bigint | null>(null);
+    const [stakedAmount, setStakedAmount] = useState<bigint>(0n);
+    const [stakedSeed, setStakedSeed] = useState<bigint>(0n);
+    const [duelId, setDuelId] = useState<bigint | null>(null);
+    const [isDuelCreator, setIsDuelCreator] = useState<boolean>(false);
+    const [missCount, setMissCount] = useState<number>(0);
+    const [typoCount, setTypoCount] = useState<number>(0);
 
     // Get high score from localStorage
     const highScore = typeof window !== 'undefined'
@@ -97,6 +108,39 @@ const GameStateManager: React.FC = () => {
     const handleTimeAttack = () => _startGame('timeAttack');
     const handleStory = () => _startGame('story');
     const handleStartPVP = (friendId: string) => _startGame('pvp', friendId);
+
+    // Handler for starting a staked game from SoloModeScreen
+    const handleStakedGame = (sequenceNumber: bigint, stakeAmount: bigint, seed: bigint) => {
+        console.log('🎮 Starting staked game:', { sequenceNumber: sequenceNumber.toString(), stakeAmount: stakeAmount.toString(), seed: seed.toString() });
+        setStakedSequenceNumber(sequenceNumber);
+        setStakedAmount(stakeAmount);
+        setStakedSeed(seed);
+        setMissCount(0);
+        setTypoCount(0);
+        setGameMode('staked');
+        setIsPVPGame(false);
+        setGameState('playing');
+        setScore(0);
+        setBestWpm(0);
+        setGoldEarned(0);
+    };
+
+    // Handler for starting a duel from PVPModeScreen
+    const handleDuelStart = (duelIdParam: bigint, stakeAmount: bigint, seed: bigint, isCreator: boolean) => {
+        console.log('🎮 Starting duel:', { duelId: duelIdParam.toString(), stakeAmount: stakeAmount.toString(), seed: seed.toString(), isCreator });
+        setDuelId(duelIdParam);
+        setStakedAmount(stakeAmount);
+        setStakedSeed(seed);
+        setIsDuelCreator(isCreator);
+        setMissCount(0);
+        setTypoCount(0);
+        setGameMode('duel');
+        setIsPVPGame(true);
+        setGameState('playing');
+        setScore(0);
+        setBestWpm(0);
+        setGoldEarned(0);
+    };
 
     // Track kills for game stats
     const killsRef = useRef<number>(0);
@@ -154,7 +198,7 @@ const GameStateManager: React.FC = () => {
 
             // 1. Ensure user exists with Privy data
             const userId = await ensureUserExists(supabase, walletAddress, {
-                email,
+                email: email ?? undefined,
                 username,
                 googleId
             });
@@ -459,6 +503,8 @@ const GameStateManager: React.FC = () => {
                             }}
                             onEnemyReachBottom={triggerScreenEffect}
                             onWpmUpdate={(wpm) => setBestWpm(prev => Math.max(prev, wpm))}
+                            onMissUpdate={setMissCount}
+                            onTypoUpdate={setTypoCount}
                             onReturnToStart={handleReturnToStart}
                             onWaveComplete={async (waveNumber: number) => {
                                 // Save progress locally
@@ -488,7 +534,30 @@ const GameStateManager: React.FC = () => {
                             onPowerupsChange={setSelectedPowerups}
                         />
                     ),
-                    gameOver: isPVPGame ? (
+                    gameOver: gameMode === 'staked' && stakedSequenceNumber ? (
+                        <StakedGameOver
+                            score={score}
+                            wpm={bestWpm}
+                            missCount={missCount}
+                            typoCount={typoCount}
+                            sequenceNumber={stakedSequenceNumber}
+                            stakeAmount={stakedAmount}
+                            onRestart={() => setGameState('solo')}
+                            onBackToMenu={handleRestart}
+                        />
+                    ) : gameMode === 'duel' && duelId ? (
+                        <DuelGameOver
+                            score={score}
+                            wpm={bestWpm}
+                            missCount={missCount}
+                            typoCount={typoCount}
+                            duelId={duelId}
+                            stakeAmount={stakedAmount}
+                            isCreator={isDuelCreator}
+                            onRestart={() => setGameState('pvp')}
+                            onBackToMenu={handleRestart}
+                        />
+                    ) : isPVPGame ? (
                         <div style={styles.pvpGameOverContainer}>
                             {friendScore === null ? (
                                 <>
@@ -522,6 +591,7 @@ const GameStateManager: React.FC = () => {
                                 incomingMessage={incomingMessage}
                                 incomingType={incomingMessageType ?? -1}
                                 onStart={handleStartPVP}
+                                onDuelStart={handleDuelStart}
                                 lastUsedFriendChainId={isRematch ? friendChainId : ''}
                                 onClearMessages={() => {
                                     setIncomingMessage('');
@@ -534,6 +604,7 @@ const GameStateManager: React.FC = () => {
                         <SoloModeScreen
                             onStory={handleStory}
                             onSurvival={handleTimeAttack}
+                            onStakedGame={handleStakedGame}
                             onBack={() => setGameState('start')}
                         />
                     ),

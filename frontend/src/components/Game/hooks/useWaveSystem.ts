@@ -81,7 +81,7 @@ const WAVE_CONFIGS: WaveConfig[] = [
     },
 ];
 
-const useWaveSystem = (restartSignal: boolean, pvpMode: boolean, gameMode: 'story' | 'timeAttack' | 'pvp' = 'story') => {
+const useWaveSystem = (restartSignal: boolean, pvpMode: boolean, gameMode: 'story' | 'timeAttack' | 'pvp' | 'staked' | 'duel' = 'story') => {
     const initialWave = gameMode === 'timeAttack' ? 9 : 1;
     const [currentWave, setCurrentWave] = useState(initialWave);
     const [waveState, setWaveState] = useState<WaveState>('preparing');

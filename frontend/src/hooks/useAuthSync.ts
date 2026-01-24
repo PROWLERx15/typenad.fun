@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { usePrivyWallet } from './usePrivyWallet';
-import { supabase } from '../lib/supabaseClient';
+import { supabaseUntyped as supabase } from '../lib/supabaseClient';
 import { ensureUserExists } from '../utils/supabaseHelpers';
 
 export function useAuthSync() {
