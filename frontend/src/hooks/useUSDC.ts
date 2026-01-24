@@ -188,11 +188,12 @@ export function useUSDC() {
       if (!needs) {
         return { approved: true };
       }
-      // Approve max for better UX (single approval)
-      const { hash } = await approveMax();
+      // Approve stake amount * 10 for better UX
+      const approvalAmount = amount * BigInt(10);
+      const { hash } = await approve(approvalAmount);
       return { approved: true, hash };
     },
-    [needsApproval, approveMax]
+    [needsApproval, approve]
   );
 
   return {
