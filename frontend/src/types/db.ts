@@ -21,7 +21,10 @@ export interface Database {
                     total_games: number
                     total_kills: number
                     total_words_typed: number
+                    best_score: number
+                    best_wpm: number
                     best_streak: number
+                    highest_wave_reached: number
                     created_at: string
                     last_seen_at: string
                 }
@@ -36,7 +39,10 @@ export interface Database {
                     total_games?: number
                     total_kills?: number
                     total_words_typed?: number
+                    best_score?: number
+                    best_wpm?: number
                     best_streak?: number
+                    highest_wave_reached?: number
                     created_at?: string
                     last_seen_at?: string
                 }
@@ -51,7 +57,10 @@ export interface Database {
                     total_games?: number
                     total_kills?: number
                     total_words_typed?: number
+                    best_score?: number
+                    best_wpm?: number
                     best_streak?: number
+                    highest_wave_reached?: number
                     created_at?: string
                     last_seen_at?: string
                 }

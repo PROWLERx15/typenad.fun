@@ -124,15 +124,39 @@ export async function POST(request: NextRequest) {
 
     console.log(`[score/save] Saved score ${score} for ${walletAddress} (mode: ${gameMode})`);
 
-    // Trigger achievement check asynchronously (don't block response)
-    fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/achievements/check`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ walletAddress }),
-    }).catch((error) => {
-      console.error('[score/save] Achievement check failed:', error);
+    // Calculate accuracy for achievement checking
+    const totalAttempts = (wordsTyped || kills || 0) + (typos || 0);
+    const accuracy = totalAttempts > 0 ? ((wordsTyped || kills || 0) / totalAttempts) * 100 : 100;
+
+    // Trigger achievement check synchronously with session data
+    try {
+      const achievementResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/achievements/check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletAddress,
+          session: {
+            score,
+            wpm: wpm || 0,
+            waveReached: waveReached || 1,
+            accuracy,
+            backspaceCount: misses || 0, // Using misses as backspace count
+            kills: kills || 0,
+            wordsTyped: wordsTyped || kills || 0,
+          },
+        }),
+      });
+
+      if (!achievementResponse.ok) {
+        console.error('[score/save] Achievement check failed:', await achievementResponse.text());
+      } else {
+        const achievementData = await achievementResponse.json();
+        console.log('[score/save] Achievement check completed:', achievementData);
+      }
+    } catch (error) {
+      console.error('[score/save] Achievement check error:', error);
       // Don't fail the score save if achievement check fails
-    });
+    }
 
     return NextResponse.json({
       success: true,

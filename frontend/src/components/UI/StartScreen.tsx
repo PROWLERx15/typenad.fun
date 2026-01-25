@@ -18,7 +18,6 @@ interface StartScreenProps {
     onCrypt: () => void;
     onSettings: () => void;
     onAchievements: () => void;
-    onProfile: () => void;
     disabled?: boolean;
     statusText?: string;
     chainId?: string;
@@ -27,7 +26,7 @@ interface StartScreenProps {
     onPowerupsChange: (powerups: string[]) => void;
 }
 
-const StartScreen: React.FC<StartScreenProps> = ({ onStart, onTimeAttack, onStory, onHowTo, onSolo, onMultiplayer, onLeaderboard, onShop, onCrypt, onSettings, onAchievements, onProfile, disabled, statusText, chainId, incomingMessage, selectedPowerups, onPowerupsChange }) => {
+const StartScreen: React.FC<StartScreenProps> = ({ onStart, onTimeAttack, onStory, onHowTo, onSolo, onMultiplayer, onLeaderboard, onShop, onCrypt, onSettings, onAchievements, disabled, statusText, chainId, incomingMessage, selectedPowerups, onPowerupsChange }) => {
     const { sfxMuted, sfxVolume } = useSoundSettings();
     const { isConnected, address, login, ready, authenticated, walletError, clearWalletError, logout } = usePrivyWallet();
 
@@ -80,14 +79,6 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart, onTimeAttack, onStor
                     >
                         <img src="/images/achievement.png" alt="" className={styles.buttonIcon} />
                         Achievements
-                    </button>
-                    <button
-                        onClick={onProfile}
-                        className={styles.topButton}
-                        disabled={!isWalletReady}
-                    >
-                        <img src="/images/profile.png" alt="" className={styles.buttonIcon} />
-                        Profile
                     </button>
                     <button
                         onClick={onShop}

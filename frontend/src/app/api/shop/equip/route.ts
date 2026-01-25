@@ -80,6 +80,23 @@ export async function POST(request: NextRequest) {
 
     const itemType = inventoryItem.item_type;
 
+    // Check for toggle (unequip if already equipped)
+    if (inventoryItem.equipped) {
+      const { error: unequipError } = await supabase
+        .from('user_inventory')
+        .update({ equipped: false })
+        .eq('id', inventoryItem.id);
+
+      if (unequipError) {
+        return NextResponse.json({ success: false, error: 'Failed to unequip' }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: { itemId, itemType, equipped: false }
+      });
+    }
+
     // For hero and cosmetic items, unequip other items of the same type
     if (itemType === 'hero' || itemType === 'cosmetic') {
       const { error: unequipError } = await supabase
@@ -89,11 +106,24 @@ export async function POST(request: NextRequest) {
         .eq('item_type', itemType)
         .neq('item_id', itemId);
 
-      if (unequipError) {
-        console.error('[shop/equip] Error unequipping other items:', unequipError);
+      if (unequipError) throw unequipError;
+    }
+
+    // For powerups, enforce limit of 3
+    if (itemType === 'powerup' || itemType === 'consumable') {
+      const { count, error: countError } = await supabase
+        .from('user_inventory')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('equipped', true)
+        .in('item_type', ['powerup', 'consumable']);
+
+      if (countError) throw countError;
+
+      if (count && count >= 3) {
         return NextResponse.json(
-          { success: false, error: 'Failed to unequip other items' },
-          { status: 500 }
+          { success: false, error: 'Max 3 powerups allowed' },
+          { status: 400 }
         );
       }
     }

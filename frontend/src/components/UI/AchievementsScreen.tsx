@@ -17,7 +17,7 @@ interface UnlockedAchievement {
 const AchievementsScreen: React.FC<AchievementsScreenProps> = ({ onClose, walletAddress }) => {
     const [unlockedAchievements, setUnlockedAchievements] = useState<UnlockedAchievement[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedCategory, setSelectedCategory] = useState<'all' | 'kills' | 'wpm' | 'games' | 'duel' | 'special'>('all');
+    const [selectedCategory, setSelectedCategory] = useState<'all' | 'wpm' | 'games' | 'special'>('all');
 
     useEffect(() => {
         const fetchAchievements = async () => {
@@ -123,7 +123,7 @@ const AchievementsScreen: React.FC<AchievementsScreenProps> = ({ onClose, wallet
                     marginBottom: '30px',
                     flexWrap: 'wrap',
                 }}>
-                    {['all', 'kills', 'wpm', 'games', 'duel', 'special'].map((cat) => (
+                    {['all', 'wpm', 'games', 'special'].map((cat) => (
                         <button
                             key={cat}
                             onClick={() => setSelectedCategory(cat as any)}
@@ -191,8 +191,23 @@ const AchievementsScreen: React.FC<AchievementsScreenProps> = ({ onClose, wallet
                                         textAlign: 'center',
                                         marginBottom: '15px',
                                         filter: unlocked ? 'none' : 'grayscale(100%)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
                                     }}>
-                                        {achievement.icon}
+                                        {achievement.icon.startsWith('/images/') ? (
+                                            <img 
+                                                src={achievement.icon} 
+                                                alt={achievement.name}
+                                                style={{
+                                                    width: '80px',
+                                                    height: '80px',
+                                                    objectFit: 'contain',
+                                                }}
+                                            />
+                                        ) : (
+                                            achievement.icon
+                                        )}
                                     </div>
 
                                     {/* Name */}

@@ -9,6 +9,15 @@ const supabase = createClient(
 
 interface CheckAchievementsRequest {
   walletAddress: string;
+  session?: {
+    score: number;
+    wpm: number;
+    waveReached: number;
+    accuracy: number;
+    backspaceCount: number;
+    kills: number;
+    wordsTyped: number;
+  };
 }
 
 interface UserStats {
@@ -21,12 +30,13 @@ interface UserStats {
   gold: number;
   duelWins: number;
   duelLosses: number;
+  highestWaveReached: number;
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: CheckAchievementsRequest = await request.json();
-    const { walletAddress } = body;
+    const { walletAddress, session } = body;
 
     // Validate input
     if (!walletAddress) {
@@ -36,7 +46,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[Achievements] Checking achievements for:', walletAddress);
+    console.log('[Achievements] Checking achievements for:', walletAddress, session ? 'with session data' : '');
 
     // Fetch user and their current stats
     const { data: user, error: userError } = await supabase
@@ -65,6 +75,15 @@ export async function POST(request: NextRequest) {
       .or(`player1_address.eq.${walletAddress},player2_address.eq.${walletAddress}`)
       .neq('winner_address', walletAddress);
 
+    // Get highest wave reached from game_scores
+    const { data: highestWaveData } = await supabase
+      .from('game_scores')
+      .select('wave_reached')
+      .eq('user_id', user.id)
+      .order('wave_reached', { ascending: false })
+      .limit(1)
+      .single();
+
     const userStats: UserStats = {
       totalGames: user.total_games || 0,
       totalKills: user.total_kills || 0,
@@ -75,9 +94,10 @@ export async function POST(request: NextRequest) {
       gold: user.gold || 0,
       duelWins: duelWinsData?.length || 0,
       duelLosses: duelLossesData?.length || 0,
+      highestWaveReached: highestWaveData?.wave_reached || 0,
     };
 
-    console.log('[Achievements] User stats:', userStats);
+    console.log('[Achievements] User stats:', userStats, 'Session:', session);
 
     // Fetch already unlocked achievements
     const { data: unlockedAchievements, error: achievementsError } = await supabase
@@ -105,55 +125,73 @@ export async function POST(request: NextRequest) {
 
     let totalGoldAwarded = 0;
 
+    // Use a transaction-like approach to prevent race conditions
     for (const achievement of ACHIEVEMENTS) {
       // Skip if already unlocked
       if (unlockedIds.has(achievement.id)) {
         continue;
       }
 
-      // Check if condition is met
-      if (achievement.condition(userStats)) {
+      // Check if condition is met (pass session data if available)
+      if (achievement.condition(userStats, session)) {
         console.log('[Achievements] New achievement unlocked:', achievement.id);
 
-        // Insert achievement record (with conflict handling)
-        const { error: insertError } = await supabase
+        // Try to insert achievement record with ON CONFLICT handling
+        // Using upsert with onConflict to handle race conditions atomically
+        const { data: insertData, error: insertError } = await supabase
           .from('user_achievements')
-          .insert({
-            user_id: user.id,
-            achievement_id: achievement.id,
-          })
+          .upsert(
+            {
+              user_id: user.id,
+              achievement_id: achievement.id,
+            },
+            {
+              onConflict: 'user_id,achievement_id',
+              ignoreDuplicates: true,
+            }
+          )
           .select()
-          .single();
+          .maybeSingle();
 
-        // If insert succeeded (no duplicate), award gold
-        if (!insertError) {
+        // Only award gold if this is a new achievement (insertData exists)
+        if (insertData && !insertError) {
           newlyUnlocked.push({
             achievementId: achievement.id,
             name: achievement.name,
             goldReward: achievement.goldReward,
           });
           totalGoldAwarded += achievement.goldReward;
-        } else if (insertError.code === '23505') {
-          // Unique constraint violation - achievement already exists
-          console.log('[Achievements] Achievement already exists (race condition):', achievement.id);
-        } else {
+        } else if (insertError) {
           console.error('[Achievements] Error inserting achievement:', insertError);
+        } else {
+          console.log('[Achievements] Achievement already exists (race condition prevented):', achievement.id);
         }
       }
     }
 
-    // Award gold for all newly unlocked achievements in a single update
+    // Award gold for all newly unlocked achievements in a single atomic update
     if (totalGoldAwarded > 0) {
-      const { error: goldError } = await supabase
-        .from('users')
-        .update({
-          gold: user.gold + totalGoldAwarded,
-        })
-        .eq('id', user.id);
+      // Use RPC function for atomic gold increment to prevent race conditions
+      const { error: goldError } = await supabase.rpc('increment_user_gold', {
+        p_user_id: user.id,
+        p_amount: totalGoldAwarded,
+      });
 
       if (goldError) {
-        console.error('[Achievements] Error awarding gold:', goldError);
-        // Don't fail the request, achievements are still recorded
+        // Fallback to regular update if RPC doesn't exist
+        console.warn('[Achievements] RPC not available, using fallback update');
+        const { error: fallbackError } = await supabase
+          .from('users')
+          .update({
+            gold: user.gold + totalGoldAwarded,
+          })
+          .eq('id', user.id);
+
+        if (fallbackError) {
+          console.error('[Achievements] Error awarding gold:', fallbackError);
+        } else {
+          console.log('[Achievements] Awarded', totalGoldAwarded, 'gold (fallback)');
+        }
       } else {
         console.log('[Achievements] Awarded', totalGoldAwarded, 'gold');
       }

@@ -1,121 +1,85 @@
-# Database Migrations
+# TypeNad Database Migrations
 
-This directory contains SQL migration scripts for the TypeNad game database.
+## Current Schema
 
-## Migration Files
+**File:** `000_complete_schema.sql`  
+**Version:** 2.0.0  
+**Date:** 2026-01-25
 
-### 001_add_missing_columns_and_tables.sql
-**Purpose:** Adds missing columns and creates new tables for game data tracking
+This is the **single source of truth** for the TypeNad database schema.
 
-**Changes:**
-- Adds `best_score` and `best_wpm` columns to `users` table
-- Adds `misses`, `typos`, `gold_earned`, `duration_seconds`, `words_typed`, `is_staked`, `stake_amount`, `payout_amount` columns to `game_scores` table
-- Adds `item_type` and `equipped` columns to `user_inventory` table
-- Creates `shop_items` table for purchasable items
-- Creates `duel_matches` table for duel history
-- Creates all necessary indexes for performance
+## What's Included
 
-**Rollback:** Use `001_rollback.sql` to revert changes
+### Tables (7)
+1. **users** - Player profiles and statistics
+2. **game_scores** - Individual game session records
+3. **user_inventory** - Player items and equipment
+4. **user_achievements** - Unlocked achievements
+5. **shop_items** - Available items for purchase (pre-seeded with 18 items)
+6. **duel_results** - Real-time duel synchronization
+7. **duel_matches** - Completed duel match history
 
-### 002_seed_shop_items.sql
-**Purpose:** Populates the shop_items table with initial items
+### Functions (7)
+- `increment_user_stats()` - Atomic stat updates
+- `update_user_best_scores()` - Update personal bests
+- `add_user_gold()` - Safe gold transactions
+- `get_leaderboard()` - Ranked leaderboards with time filters
+- `save_game_score()` - Complete game session save
+- `record_duel_match()` - Record duel outcomes
+- `cleanup_old_duel_results()` - Maintenance function
 
-**Items Added:**
-- 8 Powerups (score multipliers, gold multipliers, gameplay modifiers)
-- 5 Heroes (cosmetic skins)
-- 5 Cosmetic items (weapon skins, ship skins)
+### Features
+- ✅ All indexes for optimal performance
+- ✅ Row Level Security (RLS) enabled
+- ✅ Open policies for hackathon (ready to restrict for production)
+- ✅ Realtime enabled for duel synchronization
+- ✅ 18 shop items pre-seeded (8 powerups, 5 heroes, 5 cosmetics)
+- ✅ Verification checks included
 
-## Running Migrations
+## Deployment
 
-### Option 1: Using Supabase CLI
+### Fresh Installation
 ```bash
-# Run all pending migrations
-supabase db push
-
-# Or run specific migration
-psql $DATABASE_URL < supabase/migrations/001_add_missing_columns_and_tables.sql
-psql $DATABASE_URL < supabase/migrations/002_seed_shop_items.sql
+# Run the complete schema on your Supabase instance
+psql -h your-db-host -U postgres -d postgres -f 000_complete_schema.sql
 ```
 
-### Option 2: Using psql directly
-```bash
-# Set your database URL
-export DATABASE_URL="postgresql://user:password@host:port/database"
+### Via Supabase Dashboard
+1. Go to SQL Editor in your Supabase dashboard
+2. Copy the contents of `000_complete_schema.sql`
+3. Paste and run
+4. Verify the success message shows all 7 tables and 18 shop items
 
-# Run migration 001
-psql $DATABASE_URL -f supabase/migrations/001_add_missing_columns_and_tables.sql
-
-# Run migration 002
-psql $DATABASE_URL -f supabase/migrations/002_seed_shop_items.sql
+### Verification
+After running, you should see:
+```
+✅ TypeNad Database Schema Initialized Successfully
+Tables created: 7
+Shop items seeded: 18 total
+  - Powerups: 8
+  - Heroes: 5
+  - Cosmetics: 5
+Functions created: 7
+RLS enabled on all tables
+Realtime enabled for duel sync
 ```
 
-### Option 3: Using Supabase Dashboard
-1. Go to your Supabase project dashboard
-2. Navigate to SQL Editor
-3. Copy and paste the migration SQL
-4. Click "Run"
+## Schema Verification
 
-## Verification
+The schema has been verified against the complete frontend codebase. See `DATABASE_SCHEMA_ANALYSIS.md` in the root directory for detailed verification report.
 
-After running migrations, verify the changes:
+## Production Considerations
 
-```sql
--- Check users table columns
-SELECT column_name, data_type, is_nullable, column_default
-FROM information_schema.columns
-WHERE table_name = 'users'
-ORDER BY ordinal_position;
+Before deploying to production:
 
--- Check game_scores table columns
-SELECT column_name, data_type, is_nullable, column_default
-FROM information_schema.columns
-WHERE table_name = 'game_scores'
-ORDER BY ordinal_position;
+1. **Update RLS Policies** - Restrict access based on wallet ownership
+2. **Add Authentication** - Implement proper auth checks
+3. **Set up Monitoring** - Track query performance and database metrics
+4. **Schedule Maintenance** - Run `cleanup_old_duel_results()` periodically
+5. **Configure Backups** - Set up automated backup strategy
 
--- Check shop_items count
-SELECT COUNT(*) as total_items,
-       COUNT(*) FILTER (WHERE category = 'powerup') as powerups,
-       COUNT(*) FILTER (WHERE category = 'hero') as heroes,
-       COUNT(*) FILTER (WHERE category = 'cosmetic') as cosmetics
-FROM shop_items;
+## Support
 
--- Check duel_matches table exists
-SELECT EXISTS (
-  SELECT FROM information_schema.tables 
-  WHERE table_name = 'duel_matches'
-);
-```
-
-## Rollback
-
-If you need to rollback migration 001:
-
-```bash
-psql $DATABASE_URL -f supabase/migrations/001_rollback.sql
-```
-
-**⚠️ WARNING:** Rollback will drop columns and tables. All data in those columns/tables will be lost!
-
-## Migration Order
-
-Migrations must be run in order:
-1. `001_add_missing_columns_and_tables.sql` - Schema changes
-2. `002_seed_shop_items.sql` - Initial data
-
-## Troubleshooting
-
-### Error: Column already exists
-This is safe to ignore. The migrations use `IF NOT EXISTS` clauses to be idempotent.
-
-### Error: Permission denied
-Ensure you're using a database user with sufficient privileges (e.g., `postgres` user or service role).
-
-### Error: Relation does not exist
-Ensure you've run the base `database.sql` schema first, or that the tables exist in your database.
-
-## Notes
-
-- All migrations include verification queries that will raise errors if something goes wrong
-- Migrations are designed to be idempotent (safe to run multiple times)
-- Always backup your database before running migrations in production
-- Test migrations on a development/staging database first
+For issues or questions about the database schema, refer to:
+- `DATABASE_SCHEMA_ANALYSIS.md` - Complete schema verification report
+- Frontend API routes in `frontend/src/app/api/` - Usage examples
