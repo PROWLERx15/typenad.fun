@@ -9,6 +9,7 @@ interface GameOverProps {
   kills?: number;
   missCount?: number;
   typoCount?: number;
+  backspaceCount?: number;
   waveReached?: number;
   duration?: number;
   wordsTyped?: number;
@@ -23,6 +24,7 @@ const GameOver: React.FC<GameOverProps> = ({
   kills = 0,
   missCount = 0,
   typoCount = 0,
+  backspaceCount = 0,
   waveReached = 1,
   duration = 0,
   wordsTyped = 0,
@@ -59,7 +61,7 @@ const GameOver: React.FC<GameOverProps> = ({
             kills,
             gameMode: 'story',
             goldEarned,
-            misses: missCount,
+            misses: backspaceCount, // Pass actual backspace count
             typos: typoCount,
             duration,
             wordsTyped: wordsTyped || kills,

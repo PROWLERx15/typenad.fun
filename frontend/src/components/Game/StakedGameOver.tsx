@@ -4,6 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { usePrivyWallet } from '../../hooks/usePrivyWallet';
 import ResultCard from './ResultCard';
 
+// Define constants for payout estimation (should match contract)
+const FREE_MISSES = BigInt(3);
+const FREE_TYPOS = BigInt(7); // Matched with backend api/execute-game-settlement
+const PENALTY_AMOUNT = BigInt(100000); // 0.1 USDC (assuming 6 decimals)
+
 interface StakedGameOverProps {
   score: number;
   wpm: number;
@@ -53,7 +58,7 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
       if (status !== 'settled' || !address || payout === null) {
         return;
       }
-      
+
       try {
         console.log('[StakedGameOver] Saving score to database', {
           score,
@@ -90,7 +95,7 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
         } else {
           const result = await response.json();
           console.log('[StakedGameOver] Score saved successfully', result);
-          
+
           // Check for achievements after successful score save
           if (onAchievementsChecked) {
             onAchievementsChecked();
@@ -100,7 +105,7 @@ const StakedGameOver: React.FC<StakedGameOverProps> = ({
         console.error('[StakedGameOver] Error saving score:', error);
       }
     };
-    
+
     saveScore();
   }, [status, address, payout, score, wpm, missCount, typoCount, stakeAmount]);
 

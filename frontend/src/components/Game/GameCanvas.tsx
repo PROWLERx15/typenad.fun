@@ -87,6 +87,7 @@ interface GameCanvasProps {
     onWpmUpdate?: (wpm: number) => void;
     onMissUpdate?: (misses: number) => void;
     onTypoUpdate?: (typos: number) => void;
+    onBackspaceUpdate?: (backspaces: number) => void;
     onReturnToStart?: () => void;
     onWaveComplete?: (waveNumber: number) => void;
     onQuestProgress?: (kills: number, droneKills: number) => void;
@@ -103,7 +104,7 @@ interface GameCanvasProps {
     onPowerupsChange?: (powerups: string[]) => void;
 }
 
-const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEnemyReachBottom, onWpmUpdate, onMissUpdate, onTypoUpdate, onReturnToStart, onWaveComplete, onQuestProgress, onGoldEarned, goldEarned = 0, screenEffect, pvpMode, gameMode = 'story', friendChainId, remoteWord, remoteType, highScore, selectedPowerups = [], onPowerupsChange }) => {
+const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEnemyReachBottom, onWpmUpdate, onMissUpdate, onTypoUpdate, onBackspaceUpdate, onReturnToStart, onWaveComplete, onQuestProgress, onGoldEarned, goldEarned = 0, screenEffect, pvpMode, gameMode = 'story', friendChainId, remoteWord, remoteType, highScore, selectedPowerups = [], onPowerupsChange }) => {
     const { address } = usePrivyWallet();
     const { sfxMuted, sfxVolume } = useSoundSettings();
     const [playerInput, setPlayerInput] = useState('');
@@ -129,6 +130,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
     const [totalTypos, setTotalTypos] = useState(0);
     const totalMissesRef = useRef(0);
     const totalTyposRef = useRef(0);
+    const totalBackspacesRef = useRef(0);
     const hasStartedFirstWave = useRef(false);
     const [penaltyNotifications, setPenaltyNotifications] = useState<Array<{ id: number; amount: number }>>([]);
     const penaltyNotificationIdRef = useRef(0);
@@ -401,6 +403,13 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
         // Sanitize input: remove HTML tags and limit length
         const input = rawInput.replace(/[<>]/g, '').slice(0, 50);
         const typing = input.length > prevInputLengthRef.current;
+        const backspacing = input.length < prevInputLengthRef.current;
+
+        // Track backspace usage
+        if (backspacing) {
+            totalBackspacesRef.current += 1;
+            onBackspaceUpdate?.(totalBackspacesRef.current);
+        }
 
         if (typing) {
             setIsTyping(prev => !prev);

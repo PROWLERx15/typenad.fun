@@ -71,9 +71,24 @@ const AchievementNotification: React.FC<AchievementNotificationProps> = ({
           fontSize: '48px',
           flexShrink: 0,
           animation: 'bounce 0.6s ease-in-out',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
-        {achievement.icon}
+        {achievement.icon.startsWith('/images/') ? (
+          <img 
+            src={achievement.icon} 
+            alt={achievement.name}
+            style={{
+              width: '64px',
+              height: '64px',
+              objectFit: 'contain',
+            }}
+          />
+        ) : (
+          achievement.icon
+        )}
       </div>
 
       {/* Content */}

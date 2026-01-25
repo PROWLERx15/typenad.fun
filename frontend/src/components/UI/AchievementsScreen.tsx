@@ -17,7 +17,7 @@ interface UnlockedAchievement {
 const AchievementsScreen: React.FC<AchievementsScreenProps> = ({ onClose, walletAddress }) => {
     const [unlockedAchievements, setUnlockedAchievements] = useState<UnlockedAchievement[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedCategory, setSelectedCategory] = useState<'all' | 'kills' | 'wpm' | 'games' | 'duel' | 'special'>('all');
+    const [selectedCategory, setSelectedCategory] = useState<'all' | 'wpm' | 'games' | 'special'>('all');
 
     useEffect(() => {
         const fetchAchievements = async () => {
@@ -27,14 +27,23 @@ const AchievementsScreen: React.FC<AchievementsScreenProps> = ({ onClose, wallet
             }
 
             try {
+                console.log('[AchievementsScreen] Fetching achievements for:', walletAddress);
                 const response = await fetch(`/api/achievements/check?walletAddress=${walletAddress}`);
                 const data = await response.json();
 
+                console.log('[AchievementsScreen] API response:', data);
+
                 if (data.success && data.data?.achievements) {
-                    setUnlockedAchievements(data.data.achievements);
+                    // Map the achievements to the format we need
+                    const mapped = data.data.achievements.map((a: any) => ({
+                        achievementId: a.id || a.achievement_id || a.achievementId,
+                        unlockedAt: a.unlockedAt || a.unlocked_at
+                    }));
+                    console.log('[AchievementsScreen] Mapped achievements:', mapped);
+                    setUnlockedAchievements(mapped);
                 }
             } catch (error) {
-                console.error('Failed to fetch achievements:', error);
+                console.error('[AchievementsScreen] Failed to fetch achievements:', error);
             } finally {
                 setLoading(false);
             }
@@ -55,6 +64,7 @@ const AchievementsScreen: React.FC<AchievementsScreenProps> = ({ onClose, wallet
     }, [onClose]);
 
     const isUnlocked = (achievementId: string): boolean => {
+        console.log('[AchievementsScreen] Checking if unlocked:', achievementId, 'in', unlockedAchievements);
         return unlockedAchievements.some(a => a.achievementId === achievementId);
     };
 
@@ -123,7 +133,7 @@ const AchievementsScreen: React.FC<AchievementsScreenProps> = ({ onClose, wallet
                     marginBottom: '30px',
                     flexWrap: 'wrap',
                 }}>
-                    {['all', 'kills', 'wpm', 'games', 'duel', 'special'].map((cat) => (
+                    {['all', 'wpm', 'games', 'special'].map((cat) => (
                         <button
                             key={cat}
                             onClick={() => setSelectedCategory(cat as any)}
@@ -191,8 +201,23 @@ const AchievementsScreen: React.FC<AchievementsScreenProps> = ({ onClose, wallet
                                         textAlign: 'center',
                                         marginBottom: '15px',
                                         filter: unlocked ? 'none' : 'grayscale(100%)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
                                     }}>
-                                        {achievement.icon}
+                                        {achievement.icon.startsWith('/images/') ? (
+                                            <img 
+                                                src={achievement.icon} 
+                                                alt={achievement.name}
+                                                style={{
+                                                    width: '80px',
+                                                    height: '80px',
+                                                    objectFit: 'contain',
+                                                }}
+                                            />
+                                        ) : (
+                                            achievement.icon
+                                        )}
                                     </div>
 
                                     {/* Name */}

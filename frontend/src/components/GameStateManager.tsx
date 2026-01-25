@@ -22,8 +22,6 @@ import LeaderboardScreen from './UI/LeaderboardScreen';
 import CryptScreen from './UI/CryptScreen';
 import ShopScreen from './UI/ShopScreen';
 import SettingsScreen from './UI/SettingsScreen';
-import ProfileScreen from './UI/ProfileScreen';
-import AchievementsScreen from './UI/AchievementsScreen';
 import AchievementNotification from './UI/AchievementNotification';
 import MigrationPrompt from './UI/MigrationPrompt';
 import { BACKGROUND_STYLES } from '../styles/theme';
@@ -40,7 +38,7 @@ const GameStateManager: React.FC = () => {
     const { gold, updateGold, addGold } = useGoldBalance();
     const { notifications, addNotification, removeNotification } = useAchievementNotifications();
 
-    const [gameState, setGameState] = useState<'start' | 'playing' | 'gameOver' | 'pvp' | 'solo' | 'multiplayer' | 'leaderboard' | 'shop' | 'crypt' | 'settings' | 'achievements' | 'profile'>('start');
+    const [gameState, setGameState] = useState<'start' | 'playing' | 'gameOver' | 'pvp' | 'solo' | 'multiplayer' | 'leaderboard' | 'shop' | 'crypt' | 'settings'>('start');
     const [showOnboardingOverlay, setShowOnboardingOverlay] = useState(false);
     const [showMigrationPrompt, setShowMigrationPrompt] = useState(false);
     const [score, setScore] = useState(0);
@@ -69,6 +67,7 @@ const GameStateManager: React.FC = () => {
     const [isDuelCreator, setIsDuelCreator] = useState<boolean>(false);
     const [missCount, setMissCount] = useState<number>(0);
     const [typoCount, setTypoCount] = useState<number>(0);
+    const [backspaceCount, setBackspaceCount] = useState<number>(0);
 
     // NEW: Additional game metrics
     const [kills, setKills] = useState<number>(0);
@@ -103,12 +102,18 @@ const GameStateManager: React.FC = () => {
             console.log('🎯 Consumed powerups:', consumed);
             setSelectedPowerups(consumed);
 
-            // Sync consumption to database
+            // Sync consumption to database via secure API
             if (address) {
                 try {
-                    const { supabase } = await import('../lib/supabaseClient');
-                    const { syncPowerupConsumption } = await import('../utils/supabaseHelpers');
-                    await syncPowerupConsumption(supabase, address, consumed);
+                    await fetch('/api/shop/consume', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            walletAddress: address,
+                            items: consumed
+                        })
+                    });
+                    console.log('✅ Powerup consumption synced via API');
                 } catch (error) {
                     console.error('Failed to sync powerup consumption:', error);
                 }
@@ -136,6 +141,7 @@ const GameStateManager: React.FC = () => {
         setStakedSeed(seed);
         setMissCount(0);
         setTypoCount(0);
+        setBackspaceCount(0);
         setGameMode('staked');
         setIsPVPGame(false);
         setGameState('playing');
@@ -160,6 +166,7 @@ const GameStateManager: React.FC = () => {
         setIsDuelCreator(isCreator);
         setMissCount(0);
         setTypoCount(0);
+        setBackspaceCount(0);
         setGameMode('duel');
         setIsPVPGame(true);
         setGameState('playing');
@@ -215,10 +222,8 @@ const GameStateManager: React.FC = () => {
         durationRef.current = 0;
         setSelectedPowerups([]);
 
-        // Save to Supabase (individual score record)
-        if (address) {
-            saveScoreToSupabase(address, score, waveRef.current, bestWpm, gameMode, killsRef.current);
-        }
+        // Note: Score saving is handled by GameOver/StakedGameOver/DuelGameOver components
+        // via /api/score/save endpoint which includes all metrics (kills, duration, etc.)
 
         // Save scores to localStorage
         const savedHighScore = parseInt(localStorage.getItem('personal_best_score') || '0');
@@ -252,42 +257,6 @@ const GameStateManager: React.FC = () => {
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [gameState, gameMode]);
-
-    const saveScoreToSupabase = async (walletAddress: string, score: number, wave: number, wpm: number, mode: string, kills: number) => {
-        try {
-            const { supabase } = await import('../lib/supabaseClient');
-
-            // Get user data from Privy
-            const email = (user?.email?.address || user?.google?.email) || undefined;
-            const username = user?.google?.name || undefined;
-            const googleId = user?.google?.subject || undefined;
-
-            // 1. Ensure user exists with Privy data
-            const userId = await ensureUserExists(supabase, walletAddress, {
-                email: email ?? undefined,
-                username,
-                googleId
-            });
-
-            // 2. Insert score
-            if (userId) {
-                const { error: scoreError } = await (supabase
-                    .from('game_scores') as any)
-                    .insert({
-                        user_id: userId,
-                        score,
-                        wave_reached: wave,
-                        wpm,
-                        game_mode: mode,
-                        kills
-                    });
-
-                if (scoreError) console.error('Error saving score:', scoreError);
-            }
-        } catch (err) {
-            console.error('Failed to save score to Supabase:', err);
-        }
-    };
 
     const handleRestart = () => {
         const newGameId = globalThis.crypto.randomUUID();
@@ -342,8 +311,6 @@ const GameStateManager: React.FC = () => {
     const handleShop = () => setGameState('shop');
     const handleCrypt = () => setGameState('crypt');
     const handleSettings = () => setGameState('settings');
-    const handleAchievements = () => setGameState('achievements');
-    const handleProfile = () => setGameState('profile');
 
     // Check for new achievements after game over
     const checkAchievements = async () => {
@@ -360,7 +327,7 @@ const GameStateManager: React.FC = () => {
 
             if (data.success && data.data?.newAchievements?.length > 0) {
                 console.log('[GameStateManager] New achievements unlocked:', data.data.newAchievements);
-                
+
                 // Add notifications for each new achievement
                 data.data.newAchievements.forEach((achievement: any) => {
                     addNotification(achievement);
@@ -605,8 +572,6 @@ const GameStateManager: React.FC = () => {
                                     onShop={handleShop}
                                     onCrypt={handleCrypt}
                                     onSettings={handleSettings}
-                                    onAchievements={handleAchievements}
-                                    onProfile={handleProfile}
                                     disabled={!isConnected}
                                     statusText={statusTextToDisplay}
                                     chainId={address || ''}
@@ -655,6 +620,7 @@ const GameStateManager: React.FC = () => {
                             onWpmUpdate={(wpm) => setBestWpm(prev => Math.max(prev, wpm))}
                             onMissUpdate={setMissCount}
                             onTypoUpdate={setTypoCount}
+                            onBackspaceUpdate={setBackspaceCount}
                             onReturnToStart={handleReturnToStart}
                             onWaveComplete={async (waveNumber: number) => {
                                 // Update wave ref
@@ -756,6 +722,7 @@ const GameStateManager: React.FC = () => {
                             kills={kills}
                             missCount={missCount}
                             typoCount={typoCount}
+                            backspaceCount={backspaceCount}
                             waveReached={waveReached}
                             duration={duration}
                             wordsTyped={wordsTyped}
@@ -823,18 +790,6 @@ const GameStateManager: React.FC = () => {
                                 logout();
                                 setGameState('start');
                             }}
-                        />
-                    ),
-                    achievements: (
-                        <AchievementsScreen
-                            onClose={() => setGameState('start')}
-                            walletAddress={address}
-                        />
-                    ),
-                    profile: (
-                        <ProfileScreen
-                            onClose={() => setGameState('start')}
-                            walletAddress={address}
                         />
                     ),
                 };
