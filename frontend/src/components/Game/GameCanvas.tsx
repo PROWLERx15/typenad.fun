@@ -87,7 +87,6 @@ interface GameCanvasProps {
     onWpmUpdate?: (wpm: number) => void;
     onMissUpdate?: (misses: number) => void;
     onTypoUpdate?: (typos: number) => void;
-    onBackspaceUpdate?: (backspaces: number) => void;
     onReturnToStart?: () => void;
     onWaveComplete?: (waveNumber: number) => void;
     onQuestProgress?: (kills: number, droneKills: number) => void;
@@ -104,7 +103,7 @@ interface GameCanvasProps {
     onPowerupsChange?: (powerups: string[]) => void;
 }
 
-const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEnemyReachBottom, onWpmUpdate, onMissUpdate, onTypoUpdate, onBackspaceUpdate, onReturnToStart, onWaveComplete, onQuestProgress, onGoldEarned, goldEarned = 0, screenEffect, pvpMode, gameMode = 'story', friendChainId, remoteWord, remoteType, highScore, selectedPowerups = [], onPowerupsChange }) => {
+const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEnemyReachBottom, onWpmUpdate, onMissUpdate, onTypoUpdate, onReturnToStart, onWaveComplete, onQuestProgress, onGoldEarned, goldEarned = 0, screenEffect, pvpMode, gameMode = 'story', friendChainId, remoteWord, remoteType, highScore, selectedPowerups = [], onPowerupsChange }) => {
     const { address } = usePrivyWallet();
     const { sfxMuted, sfxVolume } = useSoundSettings();
     const [playerInput, setPlayerInput] = useState('');
@@ -130,7 +129,6 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
     const [totalTypos, setTotalTypos] = useState(0);
     const totalMissesRef = useRef(0);
     const totalTyposRef = useRef(0);
-    const totalBackspacesRef = useRef(0);
     const hasStartedFirstWave = useRef(false);
     const [penaltyNotifications, setPenaltyNotifications] = useState<Array<{ id: number; amount: number }>>([]);
     const penaltyNotificationIdRef = useRef(0);
@@ -149,15 +147,6 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
     const prevInputLengthRef = useRef<number>(0);
     const killsThisSession = useRef<number>(0);
     const droneKillsThisSession = useRef<number>(0);
-    
-    // NEW: Track game duration
-    const gameStartTimeRef = useRef<number>(Date.now());
-    
-    // NEW: Track words typed accurately
-    const wordsTypedCountRef = useRef<number>(0);
-    
-    // NEW: Track gold earned in this session
-    const goldEarnedRef = useRef<number>(0);
 
     const waveSystem = useWaveSystem(restartSignal, pvpMode, gameMode);
     const { timeLeft } = useTimer(60, pvpMode ? onGameOver : () => { }, restartSignal);
@@ -403,29 +392,21 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
         // Sanitize input: remove HTML tags and limit length
         const input = rawInput.replace(/[<>]/g, '').slice(0, 50);
         const typing = input.length > prevInputLengthRef.current;
-        const backspacing = input.length < prevInputLengthRef.current;
-
-        // Track backspace usage
-        if (backspacing) {
-            totalBackspacesRef.current += 1;
-            onBackspaceUpdate?.(totalBackspacesRef.current);
-        }
 
         if (typing) {
             setIsTyping(prev => !prev);
 
-            // Track typos for all modes
-            if (input.length > 0) {
+            // Track typos for staked/duel modes: a typo is when the new input doesn't match any enemy
+            if ((gameMode === 'staked' || gameMode === 'duel') && input.length > 0) {
                 const hasMatchingEnemy = enemies.some((e) => e.word.startsWith(input));
-                if (!hasMatchingEnemy) {
-                    // Count as typo if the input doesn't match any enemy
-                    // This includes:
-                    // 1. Starting to type a wrong word (first char mismatch)
-                    // 2. Continuing to type wrong characters (subsequent mismatches)
-                    // 3. Breaking a valid sequence
-                    totalTyposRef.current += 1;
-                    setTotalTypos(totalTyposRef.current);
-                    onTypoUpdate?.(totalTyposRef.current);
+                if (!hasMatchingEnemy && prevInputLengthRef.current > 0) {
+                    // Only count as typo if we were already targeting something
+                    const prevMatched = enemies.some((e) => e.word.startsWith(playerInput));
+                    if (prevMatched) {
+                        totalTyposRef.current += 1;
+                        setTotalTypos(totalTyposRef.current);
+                        onTypoUpdate?.(totalTyposRef.current);
+                    }
                 }
             }
         }
@@ -474,9 +455,6 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
             const baseGoldReward = calculateGoldReward(killed.type as EnemyType, waveSystem.currentWave);
             const goldReward = Math.floor(baseGoldReward * goldMultiplier);
             onGoldEarned(goldReward);
-            
-            // NEW: Accumulate gold earned in ref
-            goldEarnedRef.current += goldReward;
 
             const goldNotifId = goldNotificationIdRef.current++;
             setGoldNotifications(prev => [...prev, { id: goldNotifId, amount: goldReward }]);
@@ -487,8 +465,6 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
 
         if (killed && !killed.remote && !pvpMode) {
             killsThisSession.current += 1;
-            // NEW: Increment words typed counter
-            wordsTypedCountRef.current += 1;
             if (killed.type === 'drone') droneKillsThisSession.current += 1;
         }
 
@@ -516,10 +492,6 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
         setTotalTypos(0);
         totalMissesRef.current = 0;
         totalTyposRef.current = 0;
-        // NEW: Reset new tracking refs
-        gameStartTimeRef.current = Date.now();
-        wordsTypedCountRef.current = 0;
-        goldEarnedRef.current = 0;
         resetUsedWords();
         setRestartSignal((prev) => !prev);
         prevInputLengthRef.current = 0;
@@ -528,26 +500,6 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
         if (inputRef.current) {
             inputRef.current.focus();
         }
-    };
-    
-    // NEW: Helper function to calculate game duration
-    const calculateDuration = (): number => {
-        return Math.floor((Date.now() - gameStartTimeRef.current) / 1000);
-    };
-    
-    // NEW: Helper function to get all game metrics
-    const getGameMetrics = () => {
-        return {
-            score: scoreRef.current,
-            wpm: bestWpmRef.current,
-            kills: killsThisSession.current,
-            waveReached: waveSystem.currentWave,
-            goldEarned: goldEarnedRef.current,
-            missCount: totalMissesRef.current,
-            typoCount: totalTyposRef.current,
-            duration: calculateDuration(),
-            wordsTyped: wordsTypedCountRef.current,
-        };
     };
 
     return (

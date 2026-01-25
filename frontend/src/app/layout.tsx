@@ -13,6 +13,19 @@ export const metadata: Metadata = {
     icons: {
         icon: '/images/monad-webpage-logo.jpeg',
     },
+    openGraph: {
+        title: 'Typenad - Cosmic Typing Arena',
+        description: 'A high-stakes cosmic typing game powered by Monad blockchain',
+        images: ['https://www.typenad.app/images/monad-webpage-logo.jpeg'],
+    },
+    other: {
+        // Farcaster Frame v2 (Canvas) metadata
+        'fc:frame': 'vNext',
+        'fc:frame:image': 'https://www.typenad.app/images/monad-webpage-logo.jpeg',
+        'fc:frame:button:1': 'Play TypeNad',
+        'fc:frame:button:1:action': 'launch_frame',
+        'fc:frame:button:1:target': 'https://www.typenad.app',
+    },
 };
 
 export default function RootLayout({
