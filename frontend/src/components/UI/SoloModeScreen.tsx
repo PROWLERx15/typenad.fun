@@ -140,6 +140,7 @@ const SoloModeScreen: React.FC<SoloModeScreenProps> = ({
 
         try {
             // Ensure USDC is approved
+            setStatus('Checking USDC approval...');
             const { approved, hash: approvalHash } = await ensureApproval(stakeAmount);
             if (approvalHash) {
                 setStatus('Approval confirmed! Starting game...');
@@ -160,7 +161,23 @@ const SoloModeScreen: React.FC<SoloModeScreenProps> = ({
             onStakedGame(sequenceNumber, stakeAmount, seed);
         } catch (err: any) {
             console.error('Failed to start staked game:', err);
-            setError(err.message || 'Failed to start game');
+            
+            // Provide user-friendly error messages
+            let errorMessage = 'Failed to start game';
+            
+            if (err.message?.includes('insufficient funds')) {
+                errorMessage = 'Insufficient MON for gas fees. Please add MON to your wallet.';
+            } else if (err.message?.includes('user rejected')) {
+                errorMessage = 'Transaction rejected. Please try again.';
+            } else if (err.message?.includes('allowance')) {
+                errorMessage = 'USDC approval failed. Please try again.';
+            } else if (err.message?.includes('balance')) {
+                errorMessage = 'Insufficient USDC balance. Please add USDC to your wallet.';
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+            
+            setError(errorMessage);
             setStatus('');
         }
     };
