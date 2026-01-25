@@ -149,7 +149,8 @@ async function getDuelWinsLeaderboard(
     // Build query for duel wins
     let query = supabase
       .from('duel_matches')
-      .select('winner_address, settled_at');
+      .select('winner_address, settled_at')
+      .not('winner_address', 'is', null);
 
     // Apply time range filtering
     if (timeRange !== 'all') {
@@ -167,11 +168,12 @@ async function getDuelWinsLeaderboard(
       );
     }
 
-    // Aggregate wins by address
+    // Aggregate wins by address (normalize to lowercase for consistency)
     const winCounts = new Map<string, number>();
     matches?.forEach((match) => {
-      const count = winCounts.get(match.winner_address) || 0;
-      winCounts.set(match.winner_address, count + 1);
+      const normalizedAddress = match.winner_address.toLowerCase();
+      const count = winCounts.get(normalizedAddress) || 0;
+      winCounts.set(normalizedAddress, count + 1);
     });
 
     // Sort by win count
@@ -181,6 +183,24 @@ async function getDuelWinsLeaderboard(
 
     // Fetch user details for top winners
     const addresses = sortedAddresses.map(([address]) => address);
+    
+    if (addresses.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          leaderboard: [],
+          category: 'duel_wins',
+          timeRange,
+          pagination: {
+            total: 0,
+            limit,
+            offset,
+            hasMore: false,
+          },
+        },
+      });
+    }
+
     const { data: users, error: usersError } = await supabase
       .from('users')
       .select('wallet_address, username, profile_picture')
@@ -190,8 +210,10 @@ async function getDuelWinsLeaderboard(
       console.error('[leaderboard] Error fetching user details:', usersError);
     }
 
-    // Create user map for quick lookup
-    const userMap = new Map(users?.map((u) => [u.wallet_address, u]) || []);
+    console.log('[leaderboard] Fetched', users?.length || 0, 'users for', addresses.length, 'addresses');
+
+    // Create user map for quick lookup (normalize addresses to lowercase)
+    const userMap = new Map(users?.map((u) => [u.wallet_address.toLowerCase(), u]) || []);
 
     // Format results
     const leaderboard = sortedAddresses.map(([address, wins], index) => {
