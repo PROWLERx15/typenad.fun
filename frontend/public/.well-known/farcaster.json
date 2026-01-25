@@ -1,8 +1,8 @@
 {
     "accountAssociation": {
-        "header": "PLACEHOLDER_GENERATE_FROM_FARCASTER_DEV_PORTAL",
-        "payload": "PLACEHOLDER_GENERATE_FROM_FARCASTER_DEV_PORTAL",
-        "signature": "PLACEHOLDER_GENERATE_FROM_FARCASTER_DEV_PORTAL"
+        "header": "eyJmaWQiOjI0NTkzMzgsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHgxMzQ4RjY2ZTAyQTQxRjM2OTQ1YzI5Q2YzMzMwNjFjNzRFYjg4YjE4In0",
+        "payload": "eyJkb21haW4iOiJ3d3cudHlwZW5hZC5hcHAifQ",
+        "signature": "3ISI1JEUzfyJwKvJrcyKHBS9GnbMvDk8HydoavjTuxNeDuLIisTNOveimAnjBTmiZiKQB9kvXiY0A5CbSojUiRw="
     },
     "miniapp": {
         "version": "1",
