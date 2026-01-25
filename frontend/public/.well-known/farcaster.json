@@ -1,0 +1,31 @@
+{
+    "accountAssociation": {
+        "header": "PLACEHOLDER_GENERATE_FROM_FARCASTER_DEV_PORTAL",
+        "payload": "PLACEHOLDER_GENERATE_FROM_FARCASTER_DEV_PORTAL",
+        "signature": "PLACEHOLDER_GENERATE_FROM_FARCASTER_DEV_PORTAL"
+    },
+    "miniapp": {
+        "version": "1",
+        "name": "TypeNad",
+        "subtitle": "Cosmic Typing Arena",
+        "description": "A high-stakes cosmic typing game powered by Monad blockchain. Stake USDC, type fast, earn rewards!",
+        "tagline": "Type Fast. Earn Crypto.",
+        "homeUrl": "https://www.typenad.app",
+        "iconUrl": "https://www.typenad.app/images/monad-webpage-logo.jpeg",
+        "splashImageUrl": "https://www.typenad.app/images/monad-webpage-logo.jpeg",
+        "splashBackgroundColor": "#0a0a0a",
+        "heroImageUrl": "https://www.typenad.app/images/monad-webpage-logo.jpeg",
+        "screenshotUrls": [
+            "https://www.typenad.app/images/monad-webpage-logo.jpeg"
+        ],
+        "primaryCategory": "games",
+        "tags": [
+            "typing",
+            "crypto",
+            "monad",
+            "stake",
+            "arcade"
+        ],
+        "noindex": false
+    }
+}
