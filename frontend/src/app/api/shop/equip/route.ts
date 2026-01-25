@@ -39,11 +39,11 @@ export async function POST(request: NextRequest) {
 
     console.log('[shop/equip] Equip request:', { walletAddress, itemId });
 
-    // Fetch user
+    // FIXED: Normalize wallet address for case-insensitive comparison
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
-      .eq('wallet_address', walletAddress)
+      .eq('wallet_address', walletAddress.toLowerCase())
       .single();
 
     if (userError || !user) {

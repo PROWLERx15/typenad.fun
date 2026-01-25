@@ -95,28 +95,45 @@ const GameStateManager: React.FC = () => {
         waveRef.current = 1;
         durationRef.current = 0;
 
-        // Get equipped powerups and consume them
+        // CRITICAL FIX: Await powerup consumption sync before starting game
         const equipped = getEquippedPowerups();
-        if (equipped.length > 0) {
+        if (equipped.length > 0 && address) {
             const consumed = consumeEquippedPowerups();
             console.log('🎯 Consumed powerups:', consumed);
             setSelectedPowerups(consumed);
 
-            // Sync consumption to database via secure API
-            if (address) {
-                try {
-                    await fetch('/api/shop/consume', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            walletAddress: address,
-                            items: consumed
-                        })
-                    });
-                    console.log('✅ Powerup consumption synced via API');
-                } catch (error) {
-                    console.error('Failed to sync powerup consumption:', error);
+            // Sync consumption to database via secure API - MUST complete before game starts
+            try {
+                const response = await fetch('/api/shop/consume', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        walletAddress: address,
+                        items: consumed
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to sync powerup consumption');
                 }
+
+                console.log('✅ Powerup consumption synced via API');
+            } catch (error) {
+                console.error('❌ Failed to sync powerup consumption:', error);
+                // Rollback local consumption on failure
+                alert('Failed to activate powerups. Please try again.');
+                // Restore powerups to equipped state
+                consumed.forEach(itemId => {
+                    const inventory = JSON.parse(localStorage.getItem('user_inventory') || '[]');
+                    const item = inventory.find((i: any) => i.item_id === itemId);
+                    if (item) {
+                        item.equipped = true;
+                        item.quantity = (item.quantity || 0) + 1;
+                    }
+                    localStorage.setItem('user_inventory', JSON.stringify(inventory));
+                });
+                setSelectedPowerups([]);
+                return; // Don't start game if powerup sync fails
             }
         } else {
             setSelectedPowerups([]);
@@ -135,6 +152,13 @@ const GameStateManager: React.FC = () => {
 
     // Handler for starting a staked game from SoloModeScreen
     const handleStakedGame = (sequenceNumber: bigint, stakeAmount: bigint, seed: bigint) => {
+        // CRITICAL FIX: Validate wallet connection before starting staked game
+        if (!address || !isConnected) {
+            alert('Please connect your wallet before starting a staked game');
+            console.error('❌ Attempted to start staked game without wallet connection');
+            return;
+        }
+
         console.log('🎮 Starting staked game:', { sequenceNumber: sequenceNumber.toString(), stakeAmount: stakeAmount.toString(), seed: seed.toString() });
         setStakedSequenceNumber(sequenceNumber);
         setStakedAmount(stakeAmount);
@@ -159,6 +183,13 @@ const GameStateManager: React.FC = () => {
 
     // Handler for starting a duel from PVPModeScreen
     const handleDuelStart = (duelIdParam: bigint, stakeAmount: bigint, seed: bigint, isCreator: boolean) => {
+        // CRITICAL FIX: Validate wallet connection before starting duel
+        if (!address || !isConnected) {
+            alert('Please connect your wallet before starting a duel');
+            console.error('❌ Attempted to start duel without wallet connection');
+            return;
+        }
+
         console.log('🎮 Starting duel:', { duelId: duelIdParam.toString(), stakeAmount: stakeAmount.toString(), seed: seed.toString(), isCreator });
         setDuelId(duelIdParam);
         setStakedAmount(stakeAmount);

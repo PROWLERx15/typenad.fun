@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
       stakeAmount,
       payoutAmount,
       wordsTyped,
+      bestStreak,
     } = body;
 
     // Validate required fields
@@ -47,12 +48,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get or create user
+    // FIXED: Normalize wallet address for case-insensitive comparison
     let userId: string;
     const { data: existingUser, error: userError } = await supabase
       .from('users')
-      .select('id, gold, total_games, total_kills, total_words_typed, best_score, best_wpm')
-      .eq('wallet_address', walletAddress)
+      .select('id, gold, total_games, total_kills, total_words_typed, best_score, best_wpm, best_streak')
+      .eq('wallet_address', walletAddress.toLowerCase())
       .single();
 
     if (userError) {
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
         const { data: newUser, error: createError } = await supabase
           .from('users')
           .insert({
-            wallet_address: walletAddress,
+            wallet_address: walletAddress.toLowerCase(),
             username: `Player ${walletAddress.slice(0, 6)}`,
             gold: goldEarned || 0,
             total_games: 1,
@@ -69,6 +70,7 @@ export async function POST(request: NextRequest) {
             total_words_typed: wordsTyped || kills || 0,
             best_score: score,
             best_wpm: wpm || 0,
+            best_streak: bestStreak || 0,
           })
           .select('id')
           .single();
@@ -91,6 +93,7 @@ export async function POST(request: NextRequest) {
           total_words_typed: (existingUser.total_words_typed || 0) + (wordsTyped || kills || 0),
           best_score: Math.max(existingUser.best_score || 0, score),
           best_wpm: Math.max(existingUser.best_wpm || 0, wpm || 0),
+          best_streak: Math.max(existingUser.best_streak || 0, bestStreak || 0),
           last_seen_at: new Date().toISOString(),
         })
         .eq('id', userId);
@@ -128,34 +131,51 @@ export async function POST(request: NextRequest) {
     const totalAttempts = (wordsTyped || kills || 0) + (typos || 0);
     const accuracy = totalAttempts > 0 ? ((wordsTyped || kills || 0) / totalAttempts) * 100 : 100;
 
-    // Trigger achievement check synchronously with session data
-    try {
-      const achievementResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/achievements/check`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          walletAddress,
-          session: {
-            score,
-            wpm: wpm || 0,
-            waveReached: waveReached || 1,
-            accuracy,
-            backspaceCount: misses || 0, // Using misses as backspace count
-            kills: kills || 0,
-            wordsTyped: wordsTyped || kills || 0,
-          },
-        }),
-      });
+    // FIXED: Use relative URL instead of hardcoded domain
+    // Trigger achievement check with retry logic
+    const maxRetries = 3;
+    let achievementCheckSuccess = false;
 
-      if (!achievementResponse.ok) {
-        console.error('[score/save] Achievement check failed:', await achievementResponse.text());
-      } else {
-        const achievementData = await achievementResponse.json();
-        console.log('[score/save] Achievement check completed:', achievementData);
+    for (let attempt = 1; attempt <= maxRetries && !achievementCheckSuccess; attempt++) {
+      try {
+        const achievementResponse = await fetch('/api/achievements/check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            walletAddress,
+            session: {
+              score,
+              wpm: wpm || 0,
+              waveReached: waveReached || 1,
+              accuracy,
+              backspaceCount: misses || 0,
+              kills: kills || 0,
+              wordsTyped: wordsTyped || kills || 0,
+            },
+          }),
+        });
+
+        if (achievementResponse.ok) {
+          const achievementData = await achievementResponse.json();
+          console.log('[score/save] Achievement check completed:', achievementData);
+          achievementCheckSuccess = true;
+        } else {
+          console.error(`[score/save] Achievement check failed (attempt ${attempt}/${maxRetries}):`, await achievementResponse.text());
+          if (attempt < maxRetries) {
+            // Wait before retry (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          }
+        }
+      } catch (error) {
+        console.error(`[score/save] Achievement check error (attempt ${attempt}/${maxRetries}):`, error);
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
       }
-    } catch (error) {
-      console.error('[score/save] Achievement check error:', error);
-      // Don't fail the score save if achievement check fails
+    }
+
+    if (!achievementCheckSuccess) {
+      console.warn('[score/save] Achievement check failed after all retries - achievements may not be awarded');
     }
 
     return NextResponse.json({

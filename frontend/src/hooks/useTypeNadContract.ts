@@ -152,6 +152,11 @@ export function useTypeNadContract() {
         // Wait for receipt and parse event
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
+        // CRITICAL FIX: Check if transaction was successful
+        if (receipt.status === 'reverted') {
+          throw new Error('Transaction reverted - game start failed');
+        }
+
         // Find GameStarted event
         let sequenceNumber: bigint = 0n;
         let seed: bigint = 0n;
@@ -171,6 +176,11 @@ export function useTypeNadContract() {
           } catch {
             // Not our event, continue
           }
+        }
+
+        // CRITICAL FIX: Validate that event was found
+        if (sequenceNumber === 0n) {
+          throw new Error('Failed to parse GameStarted event - game may not have started');
         }
 
         return { hash, sequenceNumber, seed };
@@ -260,6 +270,11 @@ export function useTypeNadContract() {
 
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
+        // CRITICAL FIX: Check if transaction was successful
+        if (receipt.status === 'reverted') {
+          throw new Error('Transaction reverted - duel creation failed');
+        }
+
         // Parse duelId from DuelCreated event
         let duelId: bigint = 0n;
         for (const log of receipt.logs) {
@@ -277,6 +292,11 @@ export function useTypeNadContract() {
           } catch {
             // Not our event
           }
+        }
+
+        // CRITICAL FIX: Validate that event was found
+        if (duelId === 0n) {
+          throw new Error('Failed to parse DuelCreated event - duel may not have been created');
         }
 
         return { hash, duelId };

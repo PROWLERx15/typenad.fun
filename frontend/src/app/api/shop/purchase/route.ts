@@ -65,11 +65,11 @@ export async function POST(request: NextRequest) {
 
     const totalCost = item.gold_price * quantity;
 
-    // Fetch user
+    // FIXED: Normalize wallet address for case-insensitive comparison
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('id, gold')
-      .eq('wallet_address', walletAddress)
+      .eq('wallet_address', walletAddress.toLowerCase())
       .single();
 
     if (userError || !user) {
@@ -80,36 +80,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user has enough gold
-    if (user.gold < totalCost) {
-      console.log('[shop/purchase] Insufficient gold:', { has: user.gold, needs: totalCost });
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Insufficient gold',
-          data: {
-            currentGold: user.gold,
-            requiredGold: totalCost,
-            shortfall: totalCost - user.gold,
-          },
-        },
-        { status: 400 }
-      );
-    }
-
-    // Deduct gold from user
-    const { error: goldError } = await supabase
-      .from('users')
-      .update({
-        gold: user.gold - totalCost,
-      })
-      .eq('id', user.id);
+    // CRITICAL FIX: Use atomic gold deduction with row-level locking to prevent race conditions
+    const { data: deductionSuccess, error: goldError } = await supabase.rpc('deduct_user_gold', {
+      p_user_id: user.id,
+      p_amount: totalCost,
+    });
 
     if (goldError) {
       console.error('[shop/purchase] Error deducting gold:', goldError);
       return NextResponse.json(
         { success: false, error: 'Failed to process payment' },
         { status: 500 }
+      );
+    }
+
+    // Check if deduction was successful (user had enough gold)
+    if (!deductionSuccess) {
+      console.log('[shop/purchase] Insufficient gold (atomic check)');
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Insufficient gold',
+          data: {
+            requiredGold: totalCost,
+          },
+        },
+        { status: 400 }
       );
     }
 

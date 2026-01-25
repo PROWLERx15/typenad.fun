@@ -158,6 +158,10 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
     
     // NEW: Track gold earned in this session
     const goldEarnedRef = useRef<number>(0);
+    
+    // NEW: Track current streak and best streak
+    const currentStreakRef = useRef<number>(0);
+    const bestStreakRef = useRef<number>(0);
 
     const waveSystem = useWaveSystem(restartSignal, pvpMode, gameMode);
     const { timeLeft } = useTimer(60, pvpMode ? onGameOver : () => { }, restartSignal);
@@ -190,6 +194,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
             setTotalMisses(totalMissesRef.current);
             onMissUpdate?.(totalMissesRef.current);
         }
+        // Reset streak on miss
+        currentStreakRef.current = 0;
     }, [onEnemyReachBottom, gameMode, onMissUpdate]);
 
     // Handler for penalty misses in staked mode (when health is already at 0)
@@ -489,6 +495,12 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
             // NEW: Increment words typed counter
             wordsTypedCountRef.current += 1;
             if (killed.type === 'drone') droneKillsThisSession.current += 1;
+            
+            // NEW: Track streak
+            currentStreakRef.current += 1;
+            if (currentStreakRef.current > bestStreakRef.current) {
+                bestStreakRef.current = currentStreakRef.current;
+            }
         }
 
         // Play death sounds based on enemy type
@@ -519,6 +531,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
         gameStartTimeRef.current = Date.now();
         wordsTypedCountRef.current = 0;
         goldEarnedRef.current = 0;
+        currentStreakRef.current = 0;
+        bestStreakRef.current = 0;
         resetUsedWords();
         setRestartSignal((prev) => !prev);
         prevInputLengthRef.current = 0;
@@ -546,6 +560,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
             typoCount: totalTyposRef.current,
             duration: calculateDuration(),
             wordsTyped: wordsTypedCountRef.current,
+            bestStreak: bestStreakRef.current,
         };
     };
 

@@ -72,10 +72,46 @@ export async function POST(request: NextRequest) {
       player2Score,
     });
 
+    // CRITICAL FIX: Check if match already exists (idempotency)
+    const { data: existingMatch, error: checkError } = await supabase
+      .from('duel_matches')
+      .select('id, winner_address, settled_at')
+      .eq('duel_id', duelId)
+      .single();
+
+    if (existingMatch) {
+      console.log('[duel/record] Match already recorded (idempotent)', {
+        matchId: existingMatch.id,
+        existingWinner: existingMatch.winner_address,
+        newWinner: winnerAddress.toLowerCase(),
+      });
+
+      // If winner matches, return success (idempotent)
+      if (existingMatch.winner_address.toLowerCase() === winnerAddress.toLowerCase()) {
+        return NextResponse.json({
+          success: true,
+          data: {
+            matchId: existingMatch.id,
+            alreadyRecorded: true,
+          },
+        });
+      } else {
+        // Winner mismatch - this is a serious error
+        console.error('[duel/record] Winner mismatch detected!', {
+          existing: existingMatch.winner_address,
+          new: winnerAddress,
+        });
+        return NextResponse.json(
+          { success: false, error: 'Match already recorded with different winner' },
+          { status: 409 }
+        );
+      }
+    }
+
     // Insert or update duel match record
     const { data, error } = await supabase
       .from('duel_matches')
-      .upsert({
+      .insert({
         duel_id: duelId,
         player1_address: player1Address.toLowerCase(),
         player2_address: player2Address.toLowerCase(),
@@ -88,8 +124,6 @@ export async function POST(request: NextRequest) {
         player2_wpm: player2Wpm || 0,
         tx_hash: txHash,
         settled_at: new Date().toISOString(),
-      }, {
-        onConflict: 'duel_id',
       })
       .select('id')
       .single();

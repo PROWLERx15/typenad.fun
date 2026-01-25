@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getVerifierPublicClient } from '../../../lib/verifierWallet';
-import { supabaseUntyped as supabase } from '../../../lib/supabaseClient';
 import { TYPE_NAD_ABI, TYPE_NAD_CONTRACT_ADDRESS } from '../../../contracts/contract';
 
 /**
  * GET /api/settlement-status?duelId=123
  * 
  * Check the current status of a duel settlement.
- * Queries both the database (for player results) and blockchain (for settlement status).
+ * Queries the blockchain for duel status.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -24,23 +23,7 @@ export async function GET(request: NextRequest) {
 
     const duelIdBigInt = BigInt(duelId);
 
-    // Check Supabase for both player results
-    const { data: results, error: dbError } = await supabase
-      .from('duel_results')
-      .select('*')
-      .eq('duel_id', duelId);
-
-    if (dbError) {
-      console.error('[settlement-status] Database error:', dbError);
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch duel results' },
-        { status: 500 }
-      );
-    }
-
-    const bothPlayersFinished = results && results.length === 2;
-
-    // Query blockchain for settlement status
+    // Query blockchain for duel status
     const publicClient = getVerifierPublicClient();
     
     try {
@@ -79,7 +62,6 @@ export async function GET(request: NextRequest) {
             winner: args.winner,
             payout: args.payout.toString(),
             txHash: logs[0].transactionHash,
-            bothPlayersFinished,
           });
         }
 
@@ -87,44 +69,24 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
           success: true,
           status: 'settled',
-          bothPlayersFinished,
         });
       }
 
-      // Duel is still active
-      if (bothPlayersFinished) {
-        // Both players finished, settlement should be in progress
-        return NextResponse.json({
-          success: true,
-          status: 'settling',
-          bothPlayersFinished: true,
-        });
-      } else {
-        // Waiting for players to finish
-        return NextResponse.json({
-          success: true,
-          status: 'pending',
-          bothPlayersFinished: false,
-        });
-      }
+      // Duel is still active - settlement pending
+      return NextResponse.json({
+        success: true,
+        status: 'pending',
+        player1,
+        player2,
+        stake: stake.toString(),
+      });
 
     } catch (blockchainError: any) {
       console.error('[settlement-status] Blockchain error:', blockchainError);
       
-      // If we can't query blockchain but have DB results, return what we know
-      if (bothPlayersFinished) {
-        return NextResponse.json({
-          success: true,
-          status: 'settling',
-          bothPlayersFinished: true,
-          error: 'Could not verify on-chain status',
-        });
-      }
-
       return NextResponse.json({
         success: true,
-        status: 'pending',
-        bothPlayersFinished: false,
+        status: 'error',
         error: 'Could not verify on-chain status',
       });
     }

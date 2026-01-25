@@ -68,19 +68,19 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
   const [opponentTypos, setOpponentTypos] = useState<number>(0);
   const [waitingForOpponent, setWaitingForOpponent] = useState(true);
   const [ownResultSubmitted, setOwnResultSubmitted] = useState(false);
+  const [scoreSaved, setScoreSaved] = useState(false);
 
-  // Save score to database after settlement completes
+  // Save score to database IMMEDIATELY (don't wait for settlement)
   useEffect(() => {
     const saveScore = async () => {
-      if (status !== 'settled' || !address || !winner) {
+      if (!address || scoreSaved) {
         return;
       }
       
       try {
-        console.log('[DuelGameOver] Saving score to database', {
+        console.log('[DuelGameOver] Saving score immediately (before settlement)', {
           score,
           wpm,
-          winner,
           missCount,
           typoCount,
         });
@@ -110,6 +110,7 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
         } else {
           const result = await response.json();
           console.log('[DuelGameOver] Score saved successfully', result);
+          setScoreSaved(true);
           
           // Check for achievements after successful score save
           if (onAchievementsChecked) {
@@ -122,7 +123,18 @@ const DuelGameOver: React.FC<DuelGameOverProps> = ({
     };
     
     saveScore();
-  }, [status, address, winner, score, wpm, missCount, typoCount]);
+  }, [address, scoreSaved, score, wpm, missCount, typoCount, waveReached, kills, goldEarned, duration, wordsTyped, onAchievementsChecked]);
+
+  // OLD: This useEffect is now removed - we save immediately above
+  // Save score to database after settlement completes
+  // useEffect(() => {
+  //   const saveScore = async () => {
+  //     if (status !== 'settled' || !address || !winner) {
+  //       return;
+  //     }
+  //     ...
+  //   }
+  // }, [status, address, winner, ...]);
 
   // Fetch opponent address from contract if not provided
   useEffect(() => {

@@ -61,6 +61,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // CRITICAL FIX: Validate bonus amount to prevent contract drain exploit
+    const MAX_BONUS_AMOUNT = BigInt(1_000_000); // 1 USDC max (6 decimals)
+    const bonusAmountBigInt = BigInt(bonusAmount || '0');
+    
+    if (bonusAmountBigInt < 0n) {
+      return NextResponse.json(
+        { success: false, error: 'Bonus amount cannot be negative' },
+        { status: 400 }
+      );
+    }
+    
+    if (bonusAmountBigInt > MAX_BONUS_AMOUNT) {
+      return NextResponse.json(
+        { success: false, error: `Bonus amount exceeds maximum allowed (${MAX_BONUS_AMOUNT.toString()})` },
+        { status: 400 }
+      );
+    }
+
     // 4. Create message hash matching contract's expectation
     // Contract: keccak256(abi.encodePacked(sequenceNumber, misses, typos, bonusAmount, msg.sender))
     const messageHash = keccak256(

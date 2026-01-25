@@ -14,12 +14,21 @@ if (!supabaseUrl || !supabaseKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-export type PlayerStats = {
+// Database types matching actual schema
+export type UserProfile = {
+    id: string;
     wallet_address: string;
-    high_score: number;
+    username: string | null;
+    email: string | null;
+    gold: number;
+    total_games: number;
     total_kills: number;
-    credits: number;
-    inventory: string[]; // JSON string of powerup IDs
-    games_played: number;
-    last_played_at: string;
+    total_words_typed: number;
+    best_score: number;
+    best_wpm: number;
+    best_streak: number;
+    highest_wave_reached: number;
+    created_at: string;
+    updated_at: string;
+    last_seen_at: string;
 };

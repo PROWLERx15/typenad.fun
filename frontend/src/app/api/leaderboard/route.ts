@@ -101,6 +101,7 @@ export async function GET(request: NextRequest) {
       username: user.username || `Player ${user.wallet_address.slice(0, 6)}`,
       profilePicture: user.profile_picture || null,
       value: user[category],
+      bestWpm: user.best_wpm || 0, // Always include WPM for display
     }));
 
     const result = {
@@ -203,7 +204,7 @@ async function getDuelWinsLeaderboard(
 
     const { data: users, error: usersError } = await supabase
       .from('users')
-      .select('wallet_address, username, profile_picture')
+      .select('wallet_address, username, profile_picture, best_wpm')
       .in('wallet_address', addresses);
 
     if (usersError) {
@@ -224,6 +225,7 @@ async function getDuelWinsLeaderboard(
         username: user?.username || `Player ${address.slice(0, 6)}`,
         profilePicture: user?.profile_picture || null,
         value: wins,
+        bestWpm: user?.best_wpm || 0, // Include WPM for display
       };
     });
 

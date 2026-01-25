@@ -28,11 +28,11 @@ export async function GET(request: NextRequest) {
 
     console.log('[user/profile] Fetching profile for:', walletAddress);
 
-    // Fetch user data
+    // FIXED: Normalize wallet address for case-insensitive comparison
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
-      .eq('wallet_address', walletAddress)
+      .eq('wallet_address', walletAddress.toLowerCase())
       .single();
 
     if (userError || !user) {
@@ -53,15 +53,16 @@ export async function GET(request: NextRequest) {
           .eq('user_id', user.id)
           .order('unlocked_at', { ascending: false }),
 
-        // Duel wins
-        supabase.from('duel_matches').select('id').eq('winner_address', walletAddress),
+        // Duel wins (case-insensitive)
+        supabase.from('duel_matches').select('id').eq('winner_address', walletAddress.toLowerCase()),
 
-        // Duel losses
+        // Duel losses (case-insensitive, exclude unsettled matches)
         supabase
           .from('duel_matches')
           .select('id')
-          .or(`player1_address.eq.${walletAddress},player2_address.eq.${walletAddress}`)
-          .neq('winner_address', walletAddress),
+          .not('winner_address', 'is', null) // Exclude unsettled matches
+          .or(`player1_address.eq.${walletAddress.toLowerCase()},player2_address.eq.${walletAddress.toLowerCase()}`)
+          .neq('winner_address', walletAddress.toLowerCase()),
 
         // Leaderboard rank
         supabase

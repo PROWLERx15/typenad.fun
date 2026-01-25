@@ -43,11 +43,11 @@ export async function GET(request: NextRequest) {
 
     console.log('[user/stats] Fetching stats for:', walletAddress);
 
-    // Fetch user data
+    // FIXED: Normalize wallet address for case-insensitive comparison
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
-      .eq('wallet_address', walletAddress)
+      .eq('wallet_address', walletAddress.toLowerCase())
       .single();
 
     if (userError || !user) {
@@ -78,12 +78,14 @@ export async function GET(request: NextRequest) {
       console.error('[user/stats] Error fetching duel wins:', winsError);
     }
 
-    // Calculate duel losses
+    // Calculate duel losses (case-insensitive, exclude unsettled matches)
+    const lowerAddress = walletAddress.toLowerCase();
     const { data: duelLosses, error: lossesError } = await supabase
       .from('duel_matches')
       .select('id')
-      .or(`player1_address.eq.${walletAddress},player2_address.eq.${walletAddress}`)
-      .neq('winner_address', walletAddress);
+      .not('winner_address', 'is', null) // Exclude unsettled matches
+      .or(`player1_address.eq.${lowerAddress},player2_address.eq.${lowerAddress}`)
+      .neq('winner_address', lowerAddress); // Case-insensitive comparison
 
     if (lossesError) {
       console.error('[user/stats] Error fetching duel losses:', lossesError);
