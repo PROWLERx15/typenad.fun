@@ -1,6 +1,8 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { mergeStyles } from '../../styles/theme';
 import { rankCardStyles } from './ShareableRankCard.styles';
+import { computeAuraTier } from '../../config/auraTiers';
+import { captureCardImage } from '../../utils/captureCard';
 
 interface ShareableRankCardProps {
   score: number;
@@ -23,6 +25,7 @@ const ShareableRankCard: React.FC<ShareableRankCardProps> = ({
   const [copySuccess, setCopySuccess] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
+  const [shareLabel, setShareLabel] = useState('Share on X');
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -205,78 +208,56 @@ const ShareableRankCard: React.FC<ShareableRankCardProps> = ({
     if (!cardRef.current) return;
 
     try {
-      // Temporarily remove shadows for clean capture
-      const originalBoxShadow = cardRef.current.style.boxShadow;
-      cardRef.current.style.boxShadow = 'none';
+      setShareLabel('Preparing card image…');
 
-      const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: 'transparent',
-        scale: 2,
-        logging: false,
-        useCORS: true,
-      });
+      // Capture as blob (PNG)
+      const blob = await captureCardImage(cardRef.current);
 
-      // Restore original shadow
-      cardRef.current.style.boxShadow = originalBoxShadow;
-
-      // Trim white borders
-      const trimmedCanvas = trimCanvas(canvas);
-
-      const tweetText = `I'm a ${rankTitle} on Typenad!\n\nScore: ${score.toLocaleString()}\nWPM: ${wpm || '-'}\n\nPlay now: https://typenad.fun\n\n#Typenad #Monad #SpeedTyping #Web3Gaming`;
-
-      // Try to use Web Share API with image (works on mobile and some desktop browsers)
-      if (navigator.share && navigator.canShare) {
-        await new Promise<void>((resolve) => {
-          trimmedCanvas.toBlob(async (blob) => {
-            if (blob) {
-              const file = new File([blob], 'typenad-card.png', { type: 'image/png' });
-              const shareData = {
-                text: tweetText,
-                files: [file],
-              };
-
-              if (navigator.canShare(shareData)) {
-                try {
-                  await navigator.share(shareData);
-                  setShareSuccess(true);
-                  setTimeout(() => setShareSuccess(false), 3000);
-                } catch (shareErr) {
-                  // User cancelled or share failed, fall back to clipboard method
-                  console.log('Share cancelled or failed, using clipboard method');
-                  resolve();
-                }
-              } else {
-                resolve();
-              }
-            }
-            resolve();
-          });
-        });
-      } else {
-        // Fallback: Copy to clipboard and open Twitter
-        trimmedCanvas.toBlob(async (blob) => {
-          if (blob) {
-            await navigator.clipboard.write([
-              new ClipboardItem({ 'image/png': blob })
-            ]);
-          }
-        });
-
-        const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
-        window.open(tweetUrl, '_blank', 'width=550,height=420');
-
+      // Always copy to clipboard for manual paste convenience
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ]);
         setShareSuccess(true);
-        setTimeout(() => setShareSuccess(false), 3000);
+        setTimeout(() => setShareSuccess(false), 30000);
+      } catch (clipErr) {
+        console.warn('Clipboard write failed:', clipErr);
       }
+
+      const tier = computeAuraTier(score, wpm);
+      const SHARE_TEXT = `I'm ${tier.name} on Typenad!\n\nScore: ${score.toLocaleString()}\nWPM: ${wpm || '-'}\n\nPlay now: https://typenad.app\n\n#Typenad #Monad #SpeedTyping #Web3Gaming`;
+
+      const file = new File([blob], 'typenad-card.png', { type: 'image/png' });
+
+      // Preferred: Native share with files if supported
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        setShareLabel('Sharing via native share');
+        try {
+          await navigator.share({ files: [file], text: SHARE_TEXT });
+          setTimeout(() => setShareLabel('Share on X'), 2000);
+          return;
+        } catch (shareErr) {
+          // Continue to fallback
+          console.log('Native share failed or cancelled, using fallback');
+        }
+      }
+
+      // Fallback for desktop: open Twitter compose and user pastes image from clipboard
+      setShareLabel('Opening Twitter - paste the image!');
+      const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(SHARE_TEXT)}`;
+      window.open(tweetUrl, '_blank', 'width=550,height=420');
+      setTimeout(() => setShareLabel('Share on X'), 30000);
     } catch (err) {
       console.error('Failed to share:', err);
+      setShareLabel('Upload failed — copied image to clipboard');
+      setTimeout(() => setShareLabel('Share on X'), 2500);
     }
   };
 
   // Extract first name only
   const firstName = displayName ? displayName.split(' ')[0] : 'Anonymous';
   const calculatedAura = Math.floor(score / 100);
+  const currentTier = computeAuraTier(score, wpm);
 
   return (
     <div style={rankCardStyles.wrapper}>
@@ -313,9 +294,9 @@ const ShareableRankCard: React.FC<ShareableRankCardProps> = ({
             <span style={rankCardStyles.auraValue}>Aura: {calculatedAura}</span>
           </div>
 
-          {/* Image Section - Monad Logo + Description */}
+          {/* Image Section - Aura Card Logo + Description */}
           <div style={rankCardStyles.imageSection}>
-            <img src="/images/monad-logo-purple.jpeg" alt="Monad" style={rankCardStyles.logo} />
+            <img src="/images/aura_card%20logo.png" alt="Aura Card" style={rankCardStyles.logo} />
             <div style={rankCardStyles.logoDescription}>
               Elite typing warrior with exceptional speed and accuracy in cosmic combat
             </div>
@@ -346,9 +327,9 @@ const ShareableRankCard: React.FC<ShareableRankCardProps> = ({
             </div>
           </div>
 
-          {/* Rank Title Box */}
+          {/* Rank Title Box (dynamic tier label) */}
           <div style={rankCardStyles.rankBox}>
-            <span style={rankCardStyles.rankTitle}>{rankTitle || 'GALACTIC OVERLORD'}</span>
+            <span style={mergeStyles(rankCardStyles.rankTitle, { color: currentTier.color })}>{currentTier.name}</span>
           </div>
 
           {/* Footer Branding */}
@@ -415,7 +396,7 @@ const ShareableRankCard: React.FC<ShareableRankCardProps> = ({
             }
           }}
         >
-          {shareSuccess ? 'Paste image!' : 'Share on X'}
+          {shareSuccess ? 'Image copied to clipboard' : shareLabel}
         </button>
       </div>
     </div>
