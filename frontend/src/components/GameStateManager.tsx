@@ -82,6 +82,14 @@ const GameStateManager: React.FC = () => {
 
     const _startGame = async (mode: 'story' | 'timeAttack' | 'pvp', friendId?: string) => {
         console.log('🎮 _startGame called with mode:', mode);
+        
+        // CRITICAL FIX: Validate wallet connection for all game modes
+        if (!address || !isConnected) {
+            alert('Please connect your wallet to play');
+            console.error('❌ Attempted to start game without wallet connection');
+            return;
+        }
+        
         matchRecordedRef.current = false;
         setFriendScore(null);
         setGameMode(mode);
@@ -114,24 +122,15 @@ const GameStateManager: React.FC = () => {
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to sync powerup consumption');
+                    const errorText = await response.text();
+                    throw new Error(`Failed to sync powerup consumption: ${errorText}`);
                 }
 
                 console.log('✅ Powerup consumption synced via API');
             } catch (error) {
                 console.error('❌ Failed to sync powerup consumption:', error);
-                // Rollback local consumption on failure
-                alert('Failed to activate powerups. Please try again.');
-                // Restore powerups to equipped state
-                consumed.forEach(itemId => {
-                    const inventory = JSON.parse(localStorage.getItem('user_inventory') || '[]');
-                    const item = inventory.find((i: any) => i.item_id === itemId);
-                    if (item) {
-                        item.equipped = true;
-                        item.quantity = (item.quantity || 0) + 1;
-                    }
-                    localStorage.setItem('user_inventory', JSON.stringify(inventory));
-                });
+                // Don't rollback - just show error and prevent game start
+                alert('Failed to activate powerups. Your inventory has not been changed. Please try again.');
                 setSelectedPowerups([]);
                 return; // Don't start game if powerup sync fails
             }
