@@ -26,6 +26,7 @@ export interface Database {
                     best_streak: number
                     highest_wave_reached: number
                     created_at: string
+                    updated_at: string
                     last_seen_at: string
                 }
                 Insert: {
@@ -44,6 +45,7 @@ export interface Database {
                     best_streak?: number
                     highest_wave_reached?: number
                     created_at?: string
+                    updated_at?: string
                     last_seen_at?: string
                 }
                 Update: {
@@ -62,6 +64,7 @@ export interface Database {
                     best_streak?: number
                     highest_wave_reached?: number
                     created_at?: string
+                    updated_at?: string
                     last_seen_at?: string
                 }
             }
@@ -74,6 +77,14 @@ export interface Database {
                     wpm: number
                     game_mode: string
                     kills: number
+                    misses: number
+                    typos: number
+                    gold_earned: number
+                    duration_seconds: number
+                    words_typed: number
+                    is_staked: boolean
+                    stake_amount: string | null
+                    payout_amount: string | null
                     created_at: string
                 }
                 Insert: {
@@ -84,6 +95,14 @@ export interface Database {
                     wpm: number
                     game_mode: string
                     kills: number
+                    misses?: number
+                    typos?: number
+                    gold_earned?: number
+                    duration_seconds?: number
+                    words_typed?: number
+                    is_staked?: boolean
+                    stake_amount?: string | null
+                    payout_amount?: string | null
                     created_at?: string
                 }
                 Update: {
@@ -94,6 +113,14 @@ export interface Database {
                     wpm?: number
                     game_mode?: string
                     kills?: number
+                    misses?: number
+                    typos?: number
+                    gold_earned?: number
+                    duration_seconds?: number
+                    words_typed?: number
+                    is_staked?: boolean
+                    stake_amount?: string | null
+                    payout_amount?: string | null
                     created_at?: string
                 }
             }
@@ -102,22 +129,113 @@ export interface Database {
                     id: string
                     user_id: string
                     item_id: string
+                    item_type: string
                     quantity: number
+                    equipped: boolean
                     updated_at: string
                 }
                 Insert: {
                     id?: string
                     user_id: string
                     item_id: string
-                    quantity: number
+                    item_type?: string
+                    quantity?: number
+                    equipped?: boolean
                     updated_at?: string
                 }
                 Update: {
                     id?: string
                     user_id?: string
                     item_id?: string
+                    item_type?: string
                     quantity?: number
+                    equipped?: boolean
                     updated_at?: string
+                }
+            }
+            shop_items: {
+                Row: {
+                    id: string
+                    name: string
+                    description: string
+                    gold_price: number
+                    category: string
+                    available: boolean
+                    image_url: string | null
+                    metadata: Json
+                    created_at: string
+                }
+                Insert: {
+                    id: string
+                    name: string
+                    description: string
+                    gold_price: number
+                    category: string
+                    available?: boolean
+                    image_url?: string | null
+                    metadata?: Json
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    name?: string
+                    description?: string
+                    gold_price?: number
+                    category?: string
+                    available?: boolean
+                    image_url?: string | null
+                    metadata?: Json
+                    created_at?: string
+                }
+            }
+            duel_matches: {
+                Row: {
+                    id: string
+                    duel_id: string
+                    player1_address: string
+                    player2_address: string
+                    winner_address: string | null
+                    stake_amount: string
+                    payout_amount: string | null
+                    player1_score: number
+                    player2_score: number
+                    player1_wpm: number
+                    player2_wpm: number
+                    settled_at: string | null
+                    tx_hash: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    duel_id: string
+                    player1_address: string
+                    player2_address: string
+                    winner_address?: string | null
+                    stake_amount: string
+                    payout_amount?: string | null
+                    player1_score?: number
+                    player2_score?: number
+                    player1_wpm?: number
+                    player2_wpm?: number
+                    settled_at?: string | null
+                    tx_hash?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    duel_id?: string
+                    player1_address?: string
+                    player2_address?: string
+                    winner_address?: string | null
+                    stake_amount?: string
+                    payout_amount?: string | null
+                    player1_score?: number
+                    player2_score?: number
+                    player1_wpm?: number
+                    player2_wpm?: number
+                    settled_at?: string | null
+                    tx_hash?: string | null
+                    created_at?: string
                 }
             }
             user_achievements: {

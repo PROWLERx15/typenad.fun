@@ -131,14 +131,16 @@ export async function POST(request: NextRequest) {
     const totalAttempts = (wordsTyped || kills || 0) + (typos || 0);
     const accuracy = totalAttempts > 0 ? ((wordsTyped || kills || 0) / totalAttempts) * 100 : 100;
 
-    // FIXED: Use relative URL instead of hardcoded domain
+    // FIXED: Use absolute URL for server-side fetch
     // Trigger achievement check with retry logic
     const maxRetries = 3;
     let achievementCheckSuccess = false;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
     for (let attempt = 1; attempt <= maxRetries && !achievementCheckSuccess; attempt++) {
       try {
-        const achievementResponse = await fetch('/api/achievements/check', {
+        const achievementResponse = await fetch(`${baseUrl}/api/achievements/check`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

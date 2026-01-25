@@ -28,7 +28,7 @@ export function useGoldBalance() {
                 const { data, error: fetchError } = await supabase
                     .from('users')
                     .select('gold')
-                    .eq('wallet_address', address)
+                    .eq('wallet_address', address.toLowerCase())
                     .single();
 
                 if (fetchError) {
@@ -88,7 +88,7 @@ export function useGoldBalance() {
             try {
                 const { error: updateError } = await (supabase.from('users') as any)
                     .update({ gold: newGold })
-                    .eq('wallet_address', address);
+                    .eq('wallet_address', address.toLowerCase());
 
                 if (updateError) throw updateError;
 
@@ -112,12 +112,33 @@ export function useGoldBalance() {
         await updateGold(newGold);
     }, [gold, updateGold]);
 
+    // Refresh gold from database (call after purchases/achievements)
+    const refreshGold = useCallback(async () => {
+        if (!address || !isConnected) return;
+        
+        try {
+            const { data } = await supabase
+                .from('users')
+                .select('gold')
+                .eq('wallet_address', address.toLowerCase())
+                .single();
+                
+            if (data) {
+                setGold((data as any).gold);
+                localStorage.setItem('playerGold', (data as any).gold.toString());
+            }
+        } catch (err) {
+            console.error('Failed to refresh gold:', err);
+        }
+    }, [address, isConnected]);
+
     return {
         gold,
         loading,
         error,
         updateGold,
         addGold,
-        subtractGold
+        subtractGold,
+        refreshGold
     };
 }
