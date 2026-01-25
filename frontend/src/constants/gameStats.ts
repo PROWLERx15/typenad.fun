@@ -211,28 +211,35 @@ export const recordGameEnd = async (
     // Sync to database if wallet connected
     if (walletAddress) {
         try {
-            const { supabase } = await import('../lib/supabaseClient');
+            console.log('📊 Syncing game stats to database via API...');
 
-            console.log('📊 Syncing game stats to database...');
-
-            // Increment user stats atomically
-            const { error } = await (supabase as any).rpc('increment_user_stats', {
-                p_wallet_address: walletAddress,
-                p_games: 1,
-                p_kills: kills,
-                p_gold: goldEarned,
-                p_words: wordsTyped
+            const response = await fetch('/api/score/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    walletAddress,
+                    score,
+                    wpm,
+                    waveReached: wave,
+                    kills,
+                    gameMode: mode,
+                    goldEarned,
+                    wordsTyped,
+                    // Default values for fields not tracked in this context yet
+                    misses: 0,
+                    typos: 0,
+                    duration: 0
+                }),
             });
 
-            if (error) {
-                console.error('❌ Failed to sync stats:', error);
+            const data = await response.json();
+
+            if (data.success) {
+                console.log('✅ Game stats synced successfully:', data);
             } else {
-                console.log('✅ Stats synced to database:', {
-                    games: 1,
-                    kills,
-                    gold: goldEarned,
-                    words: wordsTyped
-                });
+                console.error('❌ Failed to sync game stats:', data.error);
             }
         } catch (err) {
             console.error('❌ Failed to sync stats to database:', err);

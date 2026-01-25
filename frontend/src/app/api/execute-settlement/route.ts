@@ -20,6 +20,10 @@ interface DuelResult {
   wpm: number;
   misses: number;
   typos: number;
+  settled?: boolean;
+  winner_address?: string;
+  payout_amount?: string;
+  tx_hash?: string;
 }
 
 /**
@@ -57,7 +61,7 @@ function determineWinner(player1: PlayerScore, player2: PlayerScore): string {
 async function checkOnChainSettlement(duelId: bigint) {
   try {
     const publicClient = getVerifierPublicClient();
-    
+
     // Check if duel is still active
     const duelState = await publicClient.readContract({
       address: TYPE_NAD_CONTRACT_ADDRESS as `0x${string}`,
@@ -107,7 +111,7 @@ async function checkOnChainSettlement(duelId: bigint) {
  */
 function isTemporaryError(error: any): boolean {
   const errorMessage = error.message || JSON.stringify(error);
-  
+
   // Temporary errors that should be retried
   const temporaryPatterns = [
     'network',
@@ -119,7 +123,7 @@ function isTemporaryError(error: any): boolean {
     'nonce',
   ];
 
-  return temporaryPatterns.some(pattern => 
+  return temporaryPatterns.some(pattern =>
     errorMessage.toLowerCase().includes(pattern.toLowerCase())
   );
 }
@@ -296,7 +300,7 @@ async function executeSettlementWithRetry(
         console.log('[Settlement] Race condition detected, fetching existing result', {
           duelId: duelId.toString(),
         });
-        
+
         const onChainStatus = await checkOnChainSettlement(duelId);
         if (onChainStatus.settled) {
           return {
@@ -368,6 +372,24 @@ export async function POST(request: NextRequest) {
       .from('duel_results')
       .select('*')
       .eq('duel_id', duelId);
+
+    if (results && results.length > 0) {
+      // Check if already settled in DB (soft delete)
+      const settledResult = results.find((r: DuelResult) => r.settled);
+      if (settledResult) {
+        console.log('[execute-settlement] Duel already settled (DB cache)', {
+          duelId,
+          winner: settledResult.winner_address,
+        });
+        return NextResponse.json({
+          success: true,
+          alreadySettled: true,
+          winner: settledResult.winner_address,
+          payout: settledResult.payout_amount,
+          txHash: settledResult.tx_hash,
+        });
+      }
+    }
 
     if (dbError) {
       console.error('[execute-settlement] Database error:', dbError);
@@ -468,15 +490,27 @@ export async function POST(request: NextRequest) {
         // Don't fail settlement if recording fails
       }
 
-      // Clean up duel results from database
-      await supabase
+
+      // Mark duel results as settled in database (Soft Delete)
+      // This allows the other player to see that the duel is settled
+      const { error: cleanupError } = await supabase
         .from('duel_results')
-        .delete()
+        .update({
+          settled: true,
+          settled_at: new Date().toISOString(),
+          winner_address: result.winner.toLowerCase(),
+          payout_amount: result.payout,
+          tx_hash: result.txHash,
+        })
         .eq('duel_id', duelId);
-      
-      console.log('[execute-settlement] Cleaned up duel results from database', {
-        duelId,
-      });
+
+      if (cleanupError) {
+        console.error('[execute-settlement] Failed to mark results as settled:', cleanupError);
+      } else {
+        console.log('[execute-settlement] Marked duel results as settled', {
+          duelId,
+        });
+      }
     }
 
     return NextResponse.json(result);
@@ -484,8 +518,8 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('[execute-settlement] Error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: error.message || 'Internal server error',
         temporary: isTemporaryError(error),
       },
