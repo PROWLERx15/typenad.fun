@@ -87,6 +87,7 @@ interface GameCanvasProps {
     onWpmUpdate?: (wpm: number) => void;
     onMissUpdate?: (misses: number) => void;
     onTypoUpdate?: (typos: number) => void;
+    onBackspaceUpdate?: (backspaces: number) => void;
     onReturnToStart?: () => void;
     onWaveComplete?: (waveNumber: number) => void;
     onQuestProgress?: (kills: number, droneKills: number) => void;
@@ -103,7 +104,7 @@ interface GameCanvasProps {
     onPowerupsChange?: (powerups: string[]) => void;
 }
 
-const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEnemyReachBottom, onWpmUpdate, onMissUpdate, onTypoUpdate, onReturnToStart, onWaveComplete, onQuestProgress, onGoldEarned, goldEarned = 0, screenEffect, pvpMode, gameMode = 'story', friendChainId, remoteWord, remoteType, highScore, selectedPowerups = [], onPowerupsChange }) => {
+const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEnemyReachBottom, onWpmUpdate, onMissUpdate, onTypoUpdate, onBackspaceUpdate, onReturnToStart, onWaveComplete, onQuestProgress, onGoldEarned, goldEarned = 0, screenEffect, pvpMode, gameMode = 'story', friendChainId, remoteWord, remoteType, highScore, selectedPowerups = [], onPowerupsChange }) => {
     const { address } = usePrivyWallet();
     const { sfxMuted, sfxVolume } = useSoundSettings();
     const [playerInput, setPlayerInput] = useState('');
@@ -129,6 +130,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
     const [totalTypos, setTotalTypos] = useState(0);
     const totalMissesRef = useRef(0);
     const totalTyposRef = useRef(0);
+    const totalBackspacesRef = useRef(0);
     const hasStartedFirstWave = useRef(false);
     const [penaltyNotifications, setPenaltyNotifications] = useState<Array<{ id: number; amount: number }>>([]);
     const penaltyNotificationIdRef = useRef(0);
@@ -147,16 +149,16 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
     const prevInputLengthRef = useRef<number>(0);
     const killsThisSession = useRef<number>(0);
     const droneKillsThisSession = useRef<number>(0);
-    
+
     // NEW: Track game duration
     const gameStartTimeRef = useRef<number>(Date.now());
-    
+
     // NEW: Track words typed accurately
     const wordsTypedCountRef = useRef<number>(0);
-    
+
     // NEW: Track gold earned in this session
     const goldEarnedRef = useRef<number>(0);
-    
+
     // NEW: Track current streak and best streak
     const currentStreakRef = useRef<number>(0);
     const bestStreakRef = useRef<number>(0);
@@ -408,6 +410,12 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
         const input = rawInput.replace(/[<>]/g, '').slice(0, 50);
         const typing = input.length > prevInputLengthRef.current;
 
+        // Track backspaces
+        if (input.length < prevInputLengthRef.current) {
+            totalBackspacesRef.current += (prevInputLengthRef.current - input.length);
+            onBackspaceUpdate?.(totalBackspacesRef.current);
+        }
+
         if (typing) {
             setIsTyping(prev => !prev);
 
@@ -481,7 +489,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
         if (killed && !killed.remote && !pvpMode) {
             killsThisSession.current += 1;
             if (killed.type === 'drone') droneKillsThisSession.current += 1;
-            
+
             // NEW: Track streak
             currentStreakRef.current += 1;
             if (currentStreakRef.current > bestStreakRef.current) {
@@ -528,12 +536,12 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onScoreUpdate, onEn
             inputRef.current.focus();
         }
     };
-    
+
     // NEW: Helper function to calculate game duration
     const calculateDuration = (): number => {
         return Math.floor((Date.now() - gameStartTimeRef.current) / 1000);
     };
-    
+
     // NEW: Helper function to get all game metrics
     const getGameMetrics = () => {
         return {
