@@ -15,9 +15,11 @@ export const rankCardStyles = {
     position: 'relative',
     width: '340px',
     background: 'linear-gradient(180deg, #1a0f2e 0%, #0d0618 100%)',
-    border: '3px solid #3d2a5c',
+    borderWidth: '3px',
+    borderStyle: 'solid',
+    borderColor: '#3d2a5c',
     borderRadius: '12px',
-    boxShadow: 
+    boxShadow:
       '0 0 30px rgba(139, 92, 246, 0.25), ' +
       '0 10px 40px rgba(0, 0, 0, 0.6), ' +
       'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
@@ -29,7 +31,7 @@ export const rankCardStyles = {
 
   cardHovered: {
     transform: 'scale(1.02)',
-    boxShadow: 
+    boxShadow:
       '0 0 50px rgba(139, 92, 246, 0.4), ' +
       '0 20px 60px rgba(0, 0, 0, 0.7), ' +
       'inset 0 1px 0 rgba(255, 255, 255, 0.08)',
@@ -213,7 +215,9 @@ export const rankCardStyles = {
     gap: '6px',
     padding: '10px 18px',
     background: 'rgba(139, 92, 246, 0.1)',
-    border: '1px solid rgba(139, 92, 246, 0.3)',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: 'rgba(139, 92, 246, 0.3)',
     borderRadius: '6px',
     fontFamily: FONTS.primary,
     fontSize: '10px',

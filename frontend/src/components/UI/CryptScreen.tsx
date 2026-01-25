@@ -2,11 +2,11 @@
 
 import React from 'react';
 import { usePrivyWallet } from '../../hooks/usePrivyWallet';
-import { SCREEN_STYLES, BACKGROUND_STYLES, BUTTON_STYLES, FONTS, mergeStyles } from '../../styles/theme';
+import { SCREEN_STYLES, BACKGROUND_STYLES, BUTTON_STYLES, mergeStyles } from '../../styles/theme';
 import { styles } from './CryptScreen.styles';
-import { ENEMY_TYPE_IDS } from '../../constants/enemyTypes';
 import { getPlayerStats, getMatchHistory, getPowerupInventory, MatchHistoryEntry } from '../../constants/gameStats';
 import ShareableRankCard from './ShareableRankCard';
+import { ACHIEVEMENTS } from '../../constants/achievements';
 
 interface CryptScreenProps {
     onClose: () => void;
@@ -15,12 +15,9 @@ interface CryptScreenProps {
 
 type TabType = 'profile' | 'achievements' | 'matchHistory' | 'inventory';
 
-interface Achievement {
-    id: string;
-    name: string;
-    type: string;
-    unlocked: boolean;
-    imagePath: string;
+interface UnlockedAchievement {
+    achievementId: string;
+    unlockedAt: string;
 }
 
 interface UserProfile {
@@ -61,13 +58,6 @@ interface UserProfile {
     }>;
 }
 
-const FRAME_COUNT = 6;
-const SPRITE_COLS = 3;
-const SPRITE_WIDTH = 1024;
-const SPRITE_HEIGHT = 1024;
-const ENEMY_WIDTH = SPRITE_WIDTH / SPRITE_COLS;
-const ENEMY_HEIGHT = SPRITE_HEIGHT / 2;
-
 const getRankTitle = (score: number): string => {
     if (score === 0) return 'Cadet';
     if (score < 50) return 'Ensign';
@@ -93,9 +83,6 @@ const POWERUP_NAMES: Record<string, string> = {
 const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
     const { address } = usePrivyWallet();
     const [activeTab, setActiveTab] = React.useState<TabType>('profile');
-    const [hoveredAchievement, setHoveredAchievement] = React.useState<string | null>(null);
-    const [frame, setFrame] = React.useState(0);
-    const [killedTypes, setKilledTypes] = React.useState<number[]>([]);
     const [displayName, setDisplayName] = React.useState('');
     const [isEditingName, setIsEditingName] = React.useState(false);
     const [currentDisplayName, setCurrentDisplayName] = React.useState<string | null>(null);
@@ -107,6 +94,7 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
     const [matchHistory, setMatchHistory] = React.useState<MatchHistoryEntry[]>([]);
     const [inventory, setInventory] = React.useState<Record<string, number>>({});
     const [saving, setSaving] = React.useState(false);
+    const [unlockedAchievements, setUnlockedAchievements] = React.useState<UnlockedAchievement[]>([]);
 
     const walletAddress = address || '';
 
@@ -116,9 +104,6 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
             const storedName = localStorage.getItem('display_name');
             setCurrentDisplayName(storedName);
             setDisplayName(storedName || '');
-
-            const storedKills = localStorage.getItem('killed_types');
-            setKilledTypes(storedKills ? JSON.parse(storedKills) : []);
 
             setStats(getPlayerStats());
             setMatchHistory(getMatchHistory());
@@ -198,6 +183,34 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
         fetchInventory();
     }, [address]);
 
+    // Fetch achievements from API
+    React.useEffect(() => {
+        const fetchAchievements = async () => {
+            if (!address) return;
+
+            try {
+                console.log('[CryptScreen] Fetching achievements for:', address);
+                const response = await fetch(`/api/achievements/check?walletAddress=${address}`);
+                const data = await response.json();
+
+                console.log('[CryptScreen] Achievements API response:', data);
+
+                if (data.success && data.data?.achievements) {
+                    const mapped = data.data.achievements.map((a: any) => ({
+                        achievementId: a.id || a.achievement_id || a.achievementId,
+                        unlockedAt: a.unlockedAt || a.unlocked_at
+                    }));
+                    console.log('[CryptScreen] Mapped achievements:', mapped);
+                    setUnlockedAchievements(mapped);
+                }
+            } catch (err) {
+                console.error('[CryptScreen] Failed to fetch achievements:', err);
+            }
+        };
+
+        fetchAchievements();
+    }, [address]);
+
     const handleSaveDisplayName = async () => {
         if (displayName.length >= 3 && displayName.length <= 20) {
             setSaving(true);
@@ -240,24 +253,9 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
         }
     };
 
-    React.useEffect(() => {
-        if (!hoveredAchievement) {
-            setFrame(0);
-            return;
-        }
-
-        const interval = setInterval(() => {
-            setFrame((prev) => (prev + 1) % FRAME_COUNT);
-        }, 250);
-        return () => clearInterval(interval);
-    }, [hoveredAchievement]);
-
-    const enemyAchievements: Achievement[] = React.useMemo(() => [
-        { id: 'scout', name: 'Scout Hunter', type: 'scout', unlocked: killedTypes.includes(ENEMY_TYPE_IDS.scout), imagePath: '/images/scout.png' },
-        { id: 'cruiser', name: 'Cruiser Destroyer', type: 'cruiser', unlocked: killedTypes.includes(ENEMY_TYPE_IDS.cruiser), imagePath: '/images/cruiser.png' },
-        { id: 'drone', name: 'Drone Swatter', type: 'drone', unlocked: killedTypes.includes(ENEMY_TYPE_IDS.drone), imagePath: '/images/drone.png' },
-        { id: 'mothership', name: 'Mothership Vanquisher', type: 'mothership', unlocked: killedTypes.includes(ENEMY_TYPE_IDS.mothership), imagePath: '/images/mothership.png' },
-    ], [killedTypes]);
+    const isAchievementUnlocked = (achievementId: string): boolean => {
+        return unlockedAchievements.some(a => a.achievementId === achievementId);
+    };
 
     React.useEffect(() => {
         const handleEscape = (event: KeyboardEvent) => {
@@ -627,40 +625,134 @@ const CryptScreen: React.FC<CryptScreenProps> = ({ onClose, onGoToShop }) => {
 
                         {activeTab === 'achievements' && (
                             <>
-                                <h2 style={styles.achievementsTitle}>Medals</h2>
+                                <h2 style={styles.achievementsTitle}>Achievements</h2>
                                 <div style={styles.achievementsSubtitle}>
-                                    Unlock medals in Story Mode!
+                                    {ACHIEVEMENTS.filter(a => isAchievementUnlocked(a.id)).length} / {ACHIEVEMENTS.length} Unlocked
                                 </div>
                                 <div style={styles.section}>
-                                    <h2 style={styles.sectionTitle}>Targets Destroyed</h2>
-                                    <div style={styles.achievementsGrid}>
-                                        {enemyAchievements.map((achievement: Achievement) => {
-                                            const isHovered = hoveredAchievement === achievement.id;
-                                            const currentFrame = isHovered ? frame : 0;
-                                            const col = currentFrame % SPRITE_COLS;
-                                            const row = Math.floor(currentFrame / SPRITE_COLS);
-                                            const bgX = -col * ENEMY_WIDTH;
-                                            const bgY = -row * ENEMY_HEIGHT;
-
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                                        gap: '20px',
+                                    }}>
+                                        {ACHIEVEMENTS.map((achievement) => {
+                                            const unlocked = isAchievementUnlocked(achievement.id);
                                             return (
                                                 <div
                                                     key={achievement.id}
-                                                    style={mergeStyles(
-                                                        styles.enemyCard,
-                                                        achievement.unlocked ? styles.enemyCardUnlocked : {}
-                                                    )}
-                                                    onMouseEnter={() => achievement.unlocked && setHoveredAchievement(achievement.id)}
-                                                    onMouseLeave={() => achievement.unlocked && setHoveredAchievement(null)}
+                                                    style={{
+                                                        background: unlocked
+                                                            ? 'rgba(0, 255, 136, 0.1)'
+                                                            : 'rgba(255, 255, 255, 0.05)',
+                                                        border: unlocked
+                                                            ? '2px solid #00FF88'
+                                                            : '2px solid rgba(255, 255, 255, 0.2)',
+                                                        borderRadius: '8px',
+                                                        padding: '15px',
+                                                        position: 'relative',
+                                                        opacity: unlocked ? 1 : 0.6,
+                                                        transition: 'all 0.3s ease',
+                                                    }}
                                                 >
-                                                    <div style={styles.enemyImageContainer}>
-                                                        <div style={styles.achievementSprite(achievement.imagePath, bgX, bgY, SPRITE_WIDTH, SPRITE_HEIGHT, achievement.unlocked)} />
+                                                    {/* Icon */}
+                                                    <div style={{
+                                                        fontSize: '48px',
+                                                        textAlign: 'center',
+                                                        marginBottom: '10px',
+                                                        filter: unlocked ? 'none' : 'grayscale(100%)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                    }}>
+                                                        {achievement.icon.startsWith('/images/') ? (
+                                                            <img 
+                                                                src={achievement.icon} 
+                                                                alt={achievement.name}
+                                                                style={{
+                                                                    width: '60px',
+                                                                    height: '60px',
+                                                                    objectFit: 'contain',
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            achievement.icon
+                                                        )}
                                                     </div>
-                                                    {achievement.unlocked ? (
-                                                        <div style={mergeStyles(styles.enemyName, styles.enemyNameUnlocked)}>
-                                                            {achievement.name}
+
+                                                    {/* Name */}
+                                                    <div style={{
+                                                        fontFamily: '"Press Start 2P", monospace',
+                                                        fontSize: '11px',
+                                                        color: unlocked ? '#00FF88' : '#FFFFFF',
+                                                        textAlign: 'center',
+                                                        marginBottom: '8px',
+                                                        lineHeight: '1.4',
+                                                    }}>
+                                                        {achievement.name}
+                                                    </div>
+
+                                                    {/* Description */}
+                                                    <div style={{
+                                                        fontFamily: '"Press Start 2P", monospace',
+                                                        fontSize: '8px',
+                                                        color: '#CCCCCC',
+                                                        textAlign: 'center',
+                                                        marginBottom: '10px',
+                                                        lineHeight: '1.4',
+                                                    }}>
+                                                        {achievement.description}
+                                                    </div>
+
+                                                    {/* Reward */}
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '6px',
+                                                        fontFamily: '"Press Start 2P", monospace',
+                                                        fontSize: '10px',
+                                                        color: '#FFD700',
+                                                    }}>
+                                                        <img
+                                                            src="/images/gold-coin.png"
+                                                            alt="Gold"
+                                                            style={{ width: '16px', height: '16px' }}
+                                                        />
+                                                        <span>{achievement.goldReward}</span>
+                                                    </div>
+
+                                                    {/* Unlocked Badge */}
+                                                    {unlocked && (
+                                                        <div style={{
+                                                            position: 'absolute',
+                                                            top: '8px',
+                                                            right: '8px',
+                                                            background: '#00FF88',
+                                                            color: '#000000',
+                                                            padding: '3px 6px',
+                                                            borderRadius: '4px',
+                                                            fontFamily: '"Press Start 2P", monospace',
+                                                            fontSize: '7px',
+                                                        }}>
+                                                            ✓
                                                         </div>
-                                                    ) : (
-                                                        <div style={styles.enemyStatus}>Classified</div>
+                                                    )}
+
+                                                    {/* Locked Badge */}
+                                                    {!unlocked && (
+                                                        <div style={{
+                                                            position: 'absolute',
+                                                            top: '8px',
+                                                            right: '8px',
+                                                            background: 'rgba(255, 255, 255, 0.1)',
+                                                            color: '#FFFFFF',
+                                                            padding: '3px 6px',
+                                                            borderRadius: '4px',
+                                                            fontFamily: '"Press Start 2P", monospace',
+                                                            fontSize: '7px',
+                                                        }}>
+                                                            🔒
+                                                        </div>
                                                     )}
                                                 </div>
                                             );

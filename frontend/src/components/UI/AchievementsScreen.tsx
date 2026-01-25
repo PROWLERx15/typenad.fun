@@ -27,14 +27,23 @@ const AchievementsScreen: React.FC<AchievementsScreenProps> = ({ onClose, wallet
             }
 
             try {
+                console.log('[AchievementsScreen] Fetching achievements for:', walletAddress);
                 const response = await fetch(`/api/achievements/check?walletAddress=${walletAddress}`);
                 const data = await response.json();
 
+                console.log('[AchievementsScreen] API response:', data);
+
                 if (data.success && data.data?.achievements) {
-                    setUnlockedAchievements(data.data.achievements);
+                    // Map the achievements to the format we need
+                    const mapped = data.data.achievements.map((a: any) => ({
+                        achievementId: a.id || a.achievement_id || a.achievementId,
+                        unlockedAt: a.unlockedAt || a.unlocked_at
+                    }));
+                    console.log('[AchievementsScreen] Mapped achievements:', mapped);
+                    setUnlockedAchievements(mapped);
                 }
             } catch (error) {
-                console.error('Failed to fetch achievements:', error);
+                console.error('[AchievementsScreen] Failed to fetch achievements:', error);
             } finally {
                 setLoading(false);
             }
@@ -55,6 +64,7 @@ const AchievementsScreen: React.FC<AchievementsScreenProps> = ({ onClose, wallet
     }, [onClose]);
 
     const isUnlocked = (achievementId: string): boolean => {
+        console.log('[AchievementsScreen] Checking if unlocked:', achievementId, 'in', unlockedAchievements);
         return unlockedAchievements.some(a => a.achievementId === achievementId);
     };
 

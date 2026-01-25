@@ -22,7 +22,6 @@ import LeaderboardScreen from './UI/LeaderboardScreen';
 import CryptScreen from './UI/CryptScreen';
 import ShopScreen from './UI/ShopScreen';
 import SettingsScreen from './UI/SettingsScreen';
-import AchievementsScreen from './UI/AchievementsScreen';
 import AchievementNotification from './UI/AchievementNotification';
 import MigrationPrompt from './UI/MigrationPrompt';
 import { BACKGROUND_STYLES } from '../styles/theme';
@@ -39,7 +38,7 @@ const GameStateManager: React.FC = () => {
     const { gold, updateGold, addGold } = useGoldBalance();
     const { notifications, addNotification, removeNotification } = useAchievementNotifications();
 
-    const [gameState, setGameState] = useState<'start' | 'playing' | 'gameOver' | 'pvp' | 'solo' | 'multiplayer' | 'leaderboard' | 'shop' | 'crypt' | 'settings' | 'achievements'>('start');
+    const [gameState, setGameState] = useState<'start' | 'playing' | 'gameOver' | 'pvp' | 'solo' | 'multiplayer' | 'leaderboard' | 'shop' | 'crypt' | 'settings'>('start');
     const [showOnboardingOverlay, setShowOnboardingOverlay] = useState(false);
     const [showMigrationPrompt, setShowMigrationPrompt] = useState(false);
     const [score, setScore] = useState(0);
@@ -312,7 +311,6 @@ const GameStateManager: React.FC = () => {
     const handleShop = () => setGameState('shop');
     const handleCrypt = () => setGameState('crypt');
     const handleSettings = () => setGameState('settings');
-    const handleAchievements = () => setGameState('achievements');
 
     // Check for new achievements after game over
     const checkAchievements = async () => {
@@ -574,7 +572,6 @@ const GameStateManager: React.FC = () => {
                                     onShop={handleShop}
                                     onCrypt={handleCrypt}
                                     onSettings={handleSettings}
-                                    onAchievements={handleAchievements}
                                     disabled={!isConnected}
                                     statusText={statusTextToDisplay}
                                     chainId={address || ''}
@@ -793,12 +790,6 @@ const GameStateManager: React.FC = () => {
                                 logout();
                                 setGameState('start');
                             }}
-                        />
-                    ),
-                    achievements: (
-                        <AchievementsScreen
-                            onClose={() => setGameState('start')}
-                            walletAddress={address}
                         />
                     ),
                 };
