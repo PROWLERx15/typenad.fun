@@ -223,10 +223,8 @@ const GameStateManager: React.FC = () => {
         durationRef.current = 0;
         setSelectedPowerups([]);
 
-        // Save to Supabase (individual score record)
-        if (address) {
-            saveScoreToSupabase(address, score, waveRef.current, bestWpm, gameMode, killsRef.current);
-        }
+        // Note: Score saving is handled by GameOver/StakedGameOver/DuelGameOver components
+        // via /api/score/save endpoint which includes all metrics (kills, duration, etc.)
 
         // Save scores to localStorage
         const savedHighScore = parseInt(localStorage.getItem('personal_best_score') || '0');
@@ -260,42 +258,6 @@ const GameStateManager: React.FC = () => {
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [gameState, gameMode]);
-
-    const saveScoreToSupabase = async (walletAddress: string, score: number, wave: number, wpm: number, mode: string, kills: number) => {
-        try {
-            const { supabase } = await import('../lib/supabaseClient');
-
-            // Get user data from Privy
-            const email = (user?.email?.address || user?.google?.email) || undefined;
-            const username = user?.google?.name || undefined;
-            const googleId = user?.google?.subject || undefined;
-
-            // 1. Ensure user exists with Privy data
-            const userId = await ensureUserExists(supabase, walletAddress, {
-                email: email ?? undefined,
-                username,
-                googleId
-            });
-
-            // 2. Insert score
-            if (userId) {
-                const { error: scoreError } = await (supabase
-                    .from('game_scores') as any)
-                    .insert({
-                        user_id: userId,
-                        score,
-                        wave_reached: wave,
-                        wpm,
-                        game_mode: mode,
-                        kills
-                    });
-
-                if (scoreError) console.error('Error saving score:', scoreError);
-            }
-        } catch (err) {
-            console.error('Failed to save score to Supabase:', err);
-        }
-    };
 
     const handleRestart = () => {
         const newGameId = globalThis.crypto.randomUUID();
